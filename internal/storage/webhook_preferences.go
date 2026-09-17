@@ -32,6 +32,16 @@ func (target WebhookTarget) Allows(event string) bool {
 		category = "presence"
 	case "group.updated":
 		category = "groups"
+	case "history.sync":
+		category = "history"
+	case "call.offer", "call.accept", "call.reject", "call.terminate":
+		category = "calls"
+	case "label.updated", "label.chat", "label.message":
+		category = "labels"
+	case "contact.updated":
+		category = "contacts"
+	case "newsletter.join", "newsletter.leave", "newsletter.mute", "newsletter.live_update":
+		category = "newsletters"
 	}
 	return category != "" && slices.Contains(target.Events, category)
 }
@@ -42,7 +52,7 @@ func (s *Store) SaveWebhook(ctx context.Context, id, webhookURL string, enabled 
 	selected := []string{}
 	for _, event := range events {
 		switch event {
-		case "messages", "connection", "status", "presence", "groups":
+		case "messages", "connection", "status", "presence", "groups", "history", "calls", "labels", "contacts", "newsletters":
 		default:
 			return WebhookConfig{}, ErrWebhookEvents
 		}

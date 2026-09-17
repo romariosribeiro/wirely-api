@@ -358,6 +358,14 @@ func (m *Manager) State(id string) (State, error) {
 	return state, nil
 }
 
+func (m *Manager) JID(id string) string {
+	current, err := m.get(id)
+	if err != nil || current.client.Store.ID == nil {
+		return ""
+	}
+	return current.client.Store.ID.ToNonAD().String()
+}
+
 func (m *Manager) QRCode(id string) ([]byte, error) {
 	current, err := m.get(id)
 	if err != nil {
@@ -497,6 +505,63 @@ func (m *Manager) handleEvent(current *session, event any) {
 		m.emit(chatPresenceEvent(current.id, value))
 	case *events.GroupInfo:
 		m.emit(groupEvent(current.id, value))
+	case *events.HistorySync:
+		data := map[string]any{}
+		if value.Data != nil {
+			data["type"] = value.Data.GetSyncType().String()
+			data["progress"] = value.Data.GetProgress()
+			data["chunkOrder"] = value.Data.GetChunkOrder()
+			data["conversations"] = len(value.Data.GetConversations())
+		}
+		m.emit(newEvent("history.sync", current.id, time.Now().UTC(), data))
+	case *events.CallOffer:
+		m.emit(callEvent(current.id, "call.offer", value.BasicCallMeta, value.RemotePlatform, value.RemoteVersion, ""))
+	case *events.CallAccept:
+		m.emit(callEvent(current.id, "call.accept", value.BasicCallMeta, value.RemotePlatform, value.RemoteVersion, ""))
+	case *events.CallReject:
+		m.emit(callEvent(current.id, "call.reject", value.BasicCallMeta, "", "", ""))
+	case *events.CallTerminate:
+		m.emit(callEvent(current.id, "call.terminate", value.BasicCallMeta, "", "", value.Reason))
+	case *events.Contact:
+		data := map[string]any{"jid": value.JID.ToNonAD().String(), "fromFullSync": value.FromFullSync}
+		if value.Action != nil {
+			data["fullName"] = value.Action.GetFullName()
+			data["firstName"] = value.Action.GetFirstName()
+			data["username"] = value.Action.GetUsername()
+		}
+		m.emit(newEvent("contact.updated", current.id, value.Timestamp, data))
+	case *events.LabelEdit:
+		data := map[string]any{"labelId": value.LabelID, "fromFullSync": value.FromFullSync}
+		if value.Action != nil {
+			data["name"] = value.Action.GetName()
+			data["color"] = value.Action.GetColor()
+			data["deleted"] = value.Action.GetDeleted()
+		}
+		m.emit(newEvent("label.updated", current.id, value.Timestamp, data))
+	case *events.LabelAssociationChat:
+		data := map[string]any{"chat": value.JID.ToNonAD().String(), "labelId": value.LabelID, "fromFullSync": value.FromFullSync}
+		if value.Action != nil {
+			data["labeled"] = value.Action.GetLabeled()
+		}
+		m.emit(newEvent("label.chat", current.id, value.Timestamp, data))
+	case *events.LabelAssociationMessage:
+		data := map[string]any{"chat": value.JID.ToNonAD().String(), "messageId": value.MessageID, "labelId": value.LabelID, "fromFullSync": value.FromFullSync}
+		if value.Action != nil {
+			data["labeled"] = value.Action.GetLabeled()
+		}
+		m.emit(newEvent("label.message", current.id, value.Timestamp, data))
+	case *events.NewsletterJoin:
+		data := map[string]any{"jid": value.ID.String(), "name": value.ThreadMeta.Name.Text}
+		if value.ViewerMeta != nil {
+			data["role"] = value.ViewerMeta.Role
+		}
+		m.emit(newEvent("newsletter.join", current.id, value.Mex.Timestamp, data))
+	case *events.NewsletterLeave:
+		m.emit(newEvent("newsletter.leave", current.id, value.Mex.Timestamp, map[string]any{"jid": value.ID.String(), "role": value.Role}))
+	case *events.NewsletterMuteChange:
+		m.emit(newEvent("newsletter.mute", current.id, value.Mex.Timestamp, map[string]any{"jid": value.ID.String(), "mute": value.Mute}))
+	case *events.NewsletterLiveUpdate:
+		m.emit(newEvent("newsletter.live_update", current.id, value.Time, map[string]any{"jid": value.JID.String(), "messages": len(value.Messages)}))
 	}
 }
 

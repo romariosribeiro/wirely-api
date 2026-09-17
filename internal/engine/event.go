@@ -154,3 +154,23 @@ func groupEvent(id string, value *events.GroupInfo) Event {
 	}
 	return newEvent("group.updated", id, value.Timestamp, data)
 }
+
+func callEvent(id, eventName string, meta types.BasicCallMeta, remotePlatform, remoteVersion, reason string) Event {
+	data := map[string]any{
+		"id": meta.CallID, "from": meta.From.ToNonAD().String(),
+		"creator": meta.CallCreator.ToNonAD().String(),
+	}
+	if !meta.GroupJID.IsEmpty() {
+		data["group"] = meta.GroupJID.String()
+	}
+	if remotePlatform != "" {
+		data["remotePlatform"] = remotePlatform
+	}
+	if remoteVersion != "" {
+		data["remoteVersion"] = remoteVersion
+	}
+	if reason != "" {
+		data["reason"] = reason
+	}
+	return newEvent(eventName, id, meta.Timestamp, data)
+}

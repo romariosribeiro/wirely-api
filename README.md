@@ -462,6 +462,22 @@ integration never sends an instance ID:
 | `GET` | `/api/instance/qr?format=base64` | Read the QR Code as Base64 JSON |
 | `GET` | `/api/instance/status` | Read connection and QR state |
 
+Connect and configure the instance's single webhook in the same request:
+
+```bash
+curl -X POST 'http://localhost:8080/api/instance/connect' \
+  -H 'Authorization: Bearer wly_your_token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "subscribe":["MESSAGE","SEND_MESSAGE","READ_RECEIPT","PRESENCE","HISTORY_SYNC","CHAT_PRESENCE","CALL","CONNECTION","LABEL","CONTACT","GROUP","NEWSLETTER","QRCODE"],
+    "webhookUrl":"https://your-domain.example/webhook"
+  }'
+```
+
+The response returns the normalized subscriptions in `data.eventString`, the
+configured `data.webhookUrl`, and `data.jid`. Omitting the body only starts or
+restores the connection without changing the existing webhook.
+
 Pairing expects an international phone number without `+`:
 
 ```bash
@@ -503,6 +519,11 @@ Supported selections:
 | WhatsApp Status | `status.received`, `status.sent` |
 | Presence | `presence.updated`, `presence.chat` |
 | Groups | `group.updated` |
+| History sync | `history.sync` |
+| Calls | `call.offer`, `call.accept`, `call.reject`, `call.terminate` |
+| Labels | `label.updated`, `label.chat`, `label.message` |
+| Contacts | `contact.updated` |
+| Newsletters | `newsletter.join`, `newsletter.leave`, `newsletter.mute`, `newsletter.live_update` |
 
 Presence depends on events made available by WhatsApp; selecting it does not
 automatically subscribe to contacts or mark the account online. Incoming image,

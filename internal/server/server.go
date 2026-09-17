@@ -38,6 +38,14 @@ type ChatPresenceSender interface {
 	SendChatPresence(context.Context, string, string, string) error
 }
 
+type InstanceConnector interface {
+	Connect(string) error
+}
+
+type InstanceJIDProvider interface {
+	JID(string) string
+}
+
 type ContactProvider interface {
 	Contacts(context.Context, string) ([]engine.Contact, error)
 }
@@ -110,6 +118,7 @@ type WebhookTester interface {
 type Dependencies struct {
 	Store          *storage.Store
 	Engine         *engine.Manager
+	Connector      InstanceConnector
 	SecureCookies  bool
 	Sender         MessageSender
 	Structured     StructuredMessageSender
@@ -132,6 +141,7 @@ type Server struct {
 	handler        http.Handler
 	store          *storage.Store
 	engine         *engine.Manager
+	connector      InstanceConnector
 	sender         MessageSender
 	structured     StructuredMessageSender
 	presence       ChatPresenceSender
@@ -154,6 +164,10 @@ type Server struct {
 }
 
 func New(dependencies Dependencies) *Server {
+	connector := dependencies.Connector
+	if connector == nil && dependencies.Engine != nil {
+		connector = dependencies.Engine
+	}
 	sender := dependencies.Sender
 	structured := dependencies.Structured
 	presence := dependencies.Presence
@@ -197,7 +211,7 @@ func New(dependencies Dependencies) *Server {
 		}
 	}
 	webhookTester, _ := dependencies.Webhooks.(WebhookTester)
-	server := &Server{store: dependencies.Store, engine: dependencies.Engine, sender: sender, structured: structured, presence: presence, groups: groups, profile: profile, webhooks: dependencies.Webhooks, webhookTester: webhookTester,
+	server := &Server{store: dependencies.Store, engine: dependencies.Engine, connector: connector, sender: sender, structured: structured, presence: presence, groups: groups, profile: profile, webhooks: dependencies.Webhooks, webhookTester: webhookTester,
 		contacts: contacts, chatSender: chatSender, receivedMedia: receivedMedia, messageActions: messageActions, organization: organization, queue: dependencies.Queue, secureCookies: dependencies.SecureCookies, startedAt: time.Now(),
 		limiter: newRateLimiter(dependencies.RateLimit, time.Minute), backups: dependencies.Backups, restart: dependencies.Restart,
 		httpMetrics: newHTTPMetrics()}

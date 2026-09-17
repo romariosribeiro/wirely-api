@@ -71,6 +71,9 @@ func TestWebhookEventCategories(t *testing.T) {
 		"messages":   {"message.received", "message.sent", "message.updated", "message.deleted", "message.reaction", "message.receipt"},
 		"connection": {"instance.status"}, "status": {"status.received", "status.sent"},
 		"presence": {"presence.updated", "presence.chat"}, "groups": {"group.updated"},
+		"history": {"history.sync"}, "calls": {"call.offer", "call.accept", "call.reject", "call.terminate"},
+		"labels": {"label.updated", "label.chat", "label.message"}, "contacts": {"contact.updated"},
+		"newsletters": {"newsletter.join", "newsletter.leave", "newsletter.mute", "newsletter.live_update"},
 	}
 	for selected, allowed := range cases {
 		target := WebhookTarget{Enabled: true, Events: []string{selected}}

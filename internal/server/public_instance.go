@@ -3,10 +3,43 @@ package server
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"slices"
+	"strings"
 
 	"github.com/romariosribeiro/wirely-api/internal/engine"
+	"github.com/romariosribeiro/wirely-api/internal/storage"
 )
+
+type connectRequest struct {
+	Subscribe  *[]string `json:"subscribe,omitempty"`
+	WebhookURL *string   `json:"webhookUrl,omitempty"`
+}
+
+var errConnectWebhookURL = errors.New("invalid connect webhook URL")
+
+type connectSubscription struct {
+	Name     string
+	Category string
+}
+
+var connectSubscriptions = []connectSubscription{
+	{Name: "MESSAGE", Category: "messages"},
+	{Name: "SEND_MESSAGE", Category: "messages"},
+	{Name: "READ_RECEIPT", Category: "messages"},
+	{Name: "PRESENCE", Category: "presence"},
+	{Name: "HISTORY_SYNC", Category: "history"},
+	{Name: "CHAT_PRESENCE", Category: "presence"},
+	{Name: "CALL", Category: "calls"},
+	{Name: "CONNECTION", Category: "connection"},
+	{Name: "LABEL", Category: "labels"},
+	{Name: "CONTACT", Category: "contacts"},
+	{Name: "GROUP", Category: "groups"},
+	{Name: "NEWSLETTER", Category: "newsletters"},
+	{Name: "QRCODE", Category: "connection"},
+}
 
 func (s *Server) publicGetInstance(w http.ResponseWriter, r *http.Request) {
 	instanceID, ok := s.authenticateInstanceRequest(w, r)
@@ -26,15 +59,123 @@ func (s *Server) publicConnectInstance(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if s.engine == nil {
+	if s.connector == nil {
 		writeError(w, http.StatusServiceUnavailable, "WhatsApp engine is unavailable")
 		return
 	}
-	if err := s.engine.Connect(instanceID); err != nil {
+	payload := connectRequest{}
+	if err := decodeJSON(w, r, &payload); err != nil && !errors.Is(err, io.EOF) {
+		writeError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	eventNames, webhookURL, err := s.configureConnectWebhook(r, instanceID, payload)
+	if errors.Is(err, storage.ErrWebhookEvents) || errors.Is(err, storage.ErrWebhookURLRequired) || errors.Is(err, errConnectWebhookURL) {
 		writeError(w, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]string{"status": "connecting"})
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to configure webhook")
+		return
+	}
+	if err := s.connector.Connect(instanceID); err != nil {
+		writeError(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	jid := ""
+	if provider, ok := s.connector.(InstanceJIDProvider); ok {
+		jid = provider.JID(instanceID)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"data": map[string]string{
+			"eventString": strings.Join(eventNames, ","),
+			"jid":         jid,
+			"webhookUrl":  webhookURL,
+		},
+		"message": "success",
+	})
+}
+
+func (s *Server) configureConnectWebhook(r *http.Request, instanceID string, payload connectRequest) ([]string, string, error) {
+	current, err := s.store.GetWebhookConfig(r.Context(), instanceID)
+	if err != nil {
+		return nil, "", err
+	}
+	eventNames := subscriptionNamesForCategories(current.Events)
+	categories := append([]string(nil), current.Events...)
+	webhookURL := current.URL
+	shouldSave := payload.Subscribe != nil || payload.WebhookURL != nil
+
+	if payload.WebhookURL != nil {
+		webhookURL, err = validateWebhookURL(*payload.WebhookURL)
+		if err != nil {
+			return nil, "", fmt.Errorf("%w: %v", errConnectWebhookURL, err)
+		}
+	}
+	if payload.Subscribe != nil {
+		eventNames, categories, err = normalizeConnectSubscriptions(*payload.Subscribe)
+		if err != nil {
+			return nil, "", err
+		}
+	} else if payload.WebhookURL != nil && webhookURL != "" {
+		eventNames, categories, _ = normalizeConnectSubscriptions(allConnectSubscriptionNames())
+	}
+	if shouldSave {
+		if len(eventNames) > 0 && webhookURL == "" {
+			return nil, "", storage.ErrWebhookURLRequired
+		}
+		_, err = s.store.SaveWebhook(r.Context(), instanceID, webhookURL, webhookURL != "", categories, false)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+	return eventNames, webhookURL, nil
+}
+
+func normalizeConnectSubscriptions(values []string) ([]string, []string, error) {
+	if len(values) > len(connectSubscriptions) {
+		return nil, nil, storage.ErrWebhookEvents
+	}
+	names := make([]string, 0, len(values))
+	categories := make([]string, 0, len(values))
+	for _, value := range values {
+		name := strings.ToUpper(strings.TrimSpace(value))
+		found := false
+		for _, subscription := range connectSubscriptions {
+			if subscription.Name != name {
+				continue
+			}
+			found = true
+			if !slices.Contains(names, name) {
+				names = append(names, name)
+			}
+			if !slices.Contains(categories, subscription.Category) {
+				categories = append(categories, subscription.Category)
+			}
+			break
+		}
+		if !found {
+			return nil, nil, storage.ErrWebhookEvents
+		}
+	}
+	return names, categories, nil
+}
+
+func subscriptionNamesForCategories(categories []string) []string {
+	names := make([]string, 0, len(connectSubscriptions))
+	for _, subscription := range connectSubscriptions {
+		if slices.Contains(categories, subscription.Category) {
+			names = append(names, subscription.Name)
+		}
+	}
+	return names
+}
+
+func allConnectSubscriptionNames() []string {
+	names := make([]string, len(connectSubscriptions))
+	for index, subscription := range connectSubscriptions {
+		names[index] = subscription.Name
+	}
+	return names
 }
 
 func (s *Server) publicDisconnectInstance(w http.ResponseWriter, r *http.Request) {

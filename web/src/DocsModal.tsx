@@ -27,7 +27,7 @@ const instanceEndpoints: InstanceEndpointInfo[] = [
   { id: 'create', method: 'POST', path: '/api/instances', title: 'Criar instância', description: 'Cria a instância e retorna seu primeiro token.', admin: true, body: '{"name":"Atendimento"}' },
   { id: 'delete', method: 'DELETE', path: '/api/instances/{id}', title: 'Excluir instância', description: 'Exclui definitivamente sessão, filas, histórico e mídias.', admin: true },
   { id: 'details', method: 'GET', path: '/api/instance', title: 'Consultar instância', description: 'Retorna apenas a instância identificada pelo Bearer.' },
-  { id: 'connect', method: 'POST', path: '/api/instance/connect', title: 'Conectar', description: 'Inicia a conexão e a geração do QR Code quando necessário.' },
+  { id: 'connect', method: 'POST', path: '/api/instance/connect', title: 'Conectar', description: 'Inicia a conexão e permite configurar o webhook único e as assinaturas no mesmo pedido.', body: '{"subscribe":["MESSAGE","SEND_MESSAGE","READ_RECEIPT","PRESENCE","HISTORY_SYNC","CHAT_PRESENCE","CALL","CONNECTION","LABEL","CONTACT","GROUP","NEWSLETTER","QRCODE"],"webhookUrl":"https://seu-dominio.com/webhook"}' },
   { id: 'disconnect', method: 'POST', path: '/api/instance/disconnect', title: 'Desconectar', description: 'Desconecta sem remover o pareamento existente.' },
   { id: 'logout', method: 'DELETE', path: '/api/instance/logout', title: 'Logout', description: 'Desvincula a conta e apaga o pareamento local.' },
   { id: 'pair', method: 'POST', path: '/api/instance/pair', title: 'Código de pareamento', description: 'Gera um código temporário usando telefone internacional sem +.', body: '{"phone":"5511999999999"}' },

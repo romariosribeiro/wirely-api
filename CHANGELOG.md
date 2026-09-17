@@ -32,6 +32,10 @@ All notable changes to Wirely API are documented here. The project follows
   reactions, with attachment storage isolated by instance.
 - Automatic cleanup of received media after the 30-day history retention period.
 - Send presence simulation with nested `options.presence` and `options.delay`.
+- Connection-time `subscribe` and `webhookUrl` configuration with an
+  Evolution-compatible `eventString` response.
+- Webhook events for history synchronization, calls, contacts, labels, and
+  newsletters.
 
 ### Changed
 

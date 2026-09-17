@@ -75,6 +75,7 @@ func TestOpenAPISpec(t *testing.T) {
 			schemas["Instance"] == nil || schemas["ConnectionState"] == nil || schemas["AuditEntry"] == nil || schemas["Backup"] == nil || schemas["Alert"] == nil ||
 			schemas["ReceivedMediaMetadata"] == nil || schemas["ReceivedMediaBase64"] == nil || schemas["WebhookJob"] == nil || schemas["WebhookAccepted"] == nil ||
 			schemas["PairInstanceRequest"] == nil || schemas["PairInstanceResponse"] == nil || schemas["ContactCheckRequest"] == nil || schemas["ContactCheck"] == nil ||
+			schemas["ConnectInstanceRequest"] == nil || schemas["ConnectInstanceResponse"] == nil ||
 			schemas["DeleteMessageRequest"] == nil || schemas["EditMessageRequest"] == nil || schemas["MarkMessagesReadRequest"] == nil || schemas["MessageStatus"] == nil || schemas["ChatActionResult"] == nil {
 			t.Fatal("missing queue or team schemas")
 		}

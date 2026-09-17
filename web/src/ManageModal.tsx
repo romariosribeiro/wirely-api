@@ -7,6 +7,11 @@ const eventOptions = [
   { id: 'status', title: 'Status do WhatsApp', description: 'Publicações do Status recebidas ou enviadas pela conta.' },
   { id: 'presence', title: 'Presença', description: 'Online, offline, digitando e gravando, quando informados pelo WhatsApp.' },
   { id: 'groups', title: 'Grupos', description: 'Participantes, administradores, nome e descrição do grupo.' },
+  { id: 'history', title: 'Sincronização do histórico', description: 'Progresso, tipo e quantidade de conversas recebidas na sincronização.' },
+  { id: 'calls', title: 'Chamadas', description: 'Oferta, aceite, rejeição e encerramento de chamadas.' },
+  { id: 'labels', title: 'Etiquetas', description: 'Edição de etiquetas e associações com conversas ou mensagens.' },
+  { id: 'contacts', title: 'Contatos', description: 'Alterações sincronizadas na agenda do WhatsApp.' },
+  { id: 'newsletters', title: 'Newsletters', description: 'Entrada, saída, silenciamento e atualizações ao vivo de canais.' },
 ]
 
 type Props = {
