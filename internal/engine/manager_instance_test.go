@@ -4,7 +4,20 @@ import (
 	"context"
 	"strings"
 	"testing"
+
+	waCompanionReg "go.mau.fi/whatsmeow/proto/waCompanionReg"
+	whatsmeowStore "go.mau.fi/whatsmeow/store"
 )
+
+func TestConfigureDeviceIdentityUsesGoogleChrome(t *testing.T) {
+	configureDeviceIdentity()
+	if whatsmeowStore.DeviceProps.GetOs() != "Google Chrome" {
+		t.Fatalf("unexpected device name: %q", whatsmeowStore.DeviceProps.GetOs())
+	}
+	if whatsmeowStore.DeviceProps.GetPlatformType() != waCompanionReg.DeviceProps_CHROME {
+		t.Fatalf("unexpected platform: %s", whatsmeowStore.DeviceProps.GetPlatformType())
+	}
+}
 
 func TestPairPhoneRejectsInvalidNumberBeforeConnecting(t *testing.T) {
 	manager := &Manager{}

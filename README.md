@@ -531,6 +531,10 @@ curl -X POST 'http://localhost:8080/api/instance/pair' \
   -d '{"phone":"5511999999999"}'
 ```
 
+New pairings identify the linked device as **Google Chrome**. Existing WhatsApp
+linked-device entries keep their original name until the instance is logged out
+and paired again.
+
 Check up to 100 numbers before sending a message:
 
 ```bash

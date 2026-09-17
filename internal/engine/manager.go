@@ -17,6 +17,8 @@ import (
 
 	"github.com/skip2/go-qrcode"
 	"go.mau.fi/whatsmeow"
+	waCompanionReg "go.mau.fi/whatsmeow/proto/waCompanionReg"
+	whatsmeowStore "go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
@@ -70,6 +72,7 @@ type session struct {
 }
 
 func NewManager(dataDirectory string, store *storage.Store) (*Manager, error) {
+	configureDeviceIdentity()
 	sessionsDirectory := filepath.Join(dataDirectory, "whatsapp")
 	if err := os.MkdirAll(sessionsDirectory, 0o700); err != nil {
 		return nil, fmt.Errorf("create WhatsApp session directory: %w", err)
@@ -80,6 +83,13 @@ func NewManager(dataDirectory string, store *storage.Store) (*Manager, error) {
 		sessions:       make(map[string]*session),
 		mediaDownloads: make(chan struct{}, 2),
 	}, nil
+}
+
+func configureDeviceIdentity() {
+	osName := "Google Chrome"
+	platform := waCompanionReg.DeviceProps_CHROME
+	whatsmeowStore.DeviceProps.Os = &osName
+	whatsmeowStore.DeviceProps.PlatformType = &platform
 }
 
 func (m *Manager) Restore(ctx context.Context) error {
