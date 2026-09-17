@@ -1,0 +1,14 @@
+/bin/
+/wirely-number-fix
+/data/
+/web/node_modules/
+/web/dist/
+*.db
+*.db-shm
+*.db-wal
+.env
+.DS_Store
+
+# Instance-token encryption keys must never be committed.
+token.key
+.token-key-*

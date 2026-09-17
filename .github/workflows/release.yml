@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build panel
+        working-directory: web
+        run: npm ci && npm run build
+      - name: Build Linux binary
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p dist
+          go build -trimpath -ldflags='-s -w' -o dist/wirely ./cmd/wirely
+          cp install.sh LICENSE README.md dist/
+          tar -C dist -czf wirely-${GITHUB_REF_NAME}-linux-${GOARCH}.tar.gz wirely install.sh LICENSE README.md
+          sha256sum wirely-${GITHUB_REF_NAME}-linux-${GOARCH}.tar.gz > wirely-${GITHUB_REF_NAME}-linux-${GOARCH}.tar.gz.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wirely-linux-${{ matrix.arch }}
+          path: |
+            wirely-*.tar.gz
+            wirely-*.sha256
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wirely-linux-*
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            wirely-*.tar.gz
+            wirely-*.sha256

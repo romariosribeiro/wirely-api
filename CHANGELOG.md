@@ -1,0 +1,58 @@
+# Changelog
+
+All notable changes to Wirely API are documented here. The project follows
+[Semantic Versioning](https://semver.org/) and keeps unreleased work at the top.
+
+## [Unreleased]
+
+### Added
+
+- Complete newsletter API for creation, metadata and invite lookup, listing,
+  message history, and subscription.
+- Label editing and reversible label associations for chats and messages.
+- Community creation and batch linking or unlinking of participant groups.
+- Bearer-authenticated message deletion, text editing, read receipts, and
+  persisted delivery-status lookup.
+- Chat archive/unarchive, mute, pin, and unpin operations backed by WhatsApp
+  app-state synchronization.
+- Interactive cURL, Laravel, Node.js, and Python documentation for message and
+  chat actions.
+- Short `POST /api/auth/login` endpoint for creating administrative sessions,
+  with cookie-based examples in the API documentation.
+- Complete instance lifecycle API for Bearer-authenticated details, connection,
+  disconnection, logout, phone pairing, proxy removal, QR Code, and status.
+- Batch `POST /api/contacts/check` validation for up to 100 WhatsApp numbers.
+- Persistent, restart-safe webhook delivery queue with event-ID idempotency.
+- Bearer-authenticated webhook test, job status, and delivery-history endpoints.
+- Five-attempt webhook retry schedule with `Retry-After` support and delivery
+  attempt headers.
+- Authenticated download of received image, video, audio, document, and sticker
+  content as the original binary or Base64 JSON.
+- Complete webhook metadata for received media, locations, contacts, and
+  reactions, with attachment storage isolated by instance.
+- Automatic cleanup of received media after the 30-day history retention period.
+- Send presence simulation with nested `options.presence` and `options.delay`.
+- WhatsApp channel, label, and community endpoints are being evaluated against
+  stable whatsmeow capabilities before becoming part of the public contract.
+
+## [0.9.0] - 2026-09-17
+
+### Added
+
+- Location, contact, poll, and reaction sending.
+- Group creation, lookup, participant administration, invite rotation, and join.
+- WhatsApp profile, photo, about, and privacy management.
+- Persistent login lockout, per-instance API rate limiting, and admin auditing.
+- Automatic local backups, panel restore workflow, and pre-restore safety backup.
+- Prometheus metrics, operational alerts, and structured JSON logs.
+- Complete OpenAPI coverage for public and administrative routes.
+- CI, release automation, security policy, contribution guide, and MIT license.
+
+### Changed
+
+- The public media contract uses only `POST /api/send/media`, with the media
+  kind selected through `type`.
+- Each instance continues to own a single webhook configuration.
+
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.9.0

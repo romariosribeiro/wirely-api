@@ -1,0 +1,32 @@
+name: Bug report
+description: Report a reproducible Wirely API problem
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include tokens, passwords, WhatsApp databases, or backup files.
+  - type: input
+    id: version
+    attributes:
+      label: Wirely version
+      placeholder: v0.9.0
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      render: shell

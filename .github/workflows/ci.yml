@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: web
+        run: npm ci
+      - name: Lint frontend
+        working-directory: web
+        run: npm run lint
+      - name: Build embedded frontend
+        working-directory: web
+        run: npm run build
+      - name: Test Go packages
+        run: go test ./...
+      - name: Vet Go packages
+        run: go vet ./...
+      - name: Validate installer
+        run: sh -n ./install.sh
+      - name: Build Wirely
+        run: go build -trimpath -o /tmp/wirely ./cmd/wirely
