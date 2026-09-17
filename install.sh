@@ -36,6 +36,8 @@ Options:
   --install-dir PATH       Install directory (default: /home/USER/wirely)
   --data-dir PATH          Data directory (default: INSTALL_DIR/data)
   --migrate-from PATH      Copy an older data directory into INSTALL_DIR/data
+  --port PORT              Listen on PORT (default: 8080)
+  --port-PORT              Short form, for example --port-3000
   --address ADDRESS        Listen address (default: :8080)
   --secure-cookie          Require HTTPS for the dashboard session cookie
   --skip-build             Install the existing bin/wirely binary
@@ -271,6 +273,22 @@ while [ "$#" -gt 0 ]; do
             ADDRESS=$2
             ADDRESS_SET="true"
             shift 2
+            ;;
+        --port)
+            [ "$#" -ge 2 ] || fail "--port requires a value"
+            ADDRESS=":$2"
+            ADDRESS_SET="true"
+            shift 2
+            ;;
+        --port=*)
+            ADDRESS=":${1#--port=}"
+            ADDRESS_SET="true"
+            shift
+            ;;
+        --port-*)
+            ADDRESS=":${1#--port-}"
+            ADDRESS_SET="true"
+            shift
             ;;
         --secure-cookie)
             SECURE_COOKIE="true"

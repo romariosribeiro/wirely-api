@@ -70,6 +70,15 @@ git clone https://github.com/romariosribeiro/wirely-api.git && \
   sudo ./install.sh --open-firewall
 ```
 
+The default port is `8080`. To install on another port and open that same port
+in UFW or iptables, use:
+
+```bash
+sudo ./install.sh --open-firewall --port 3000
+```
+
+The compact form `--port-3000` is also accepted.
+
 The installer:
 
 - obtains temporary, SHA-256-verified Go and Node.js toolchains when needed;
