@@ -53,12 +53,12 @@ func TestLoginLockoutAndAudit(t *testing.T) {
 	}
 	cookie := response.Result().Cookies()[0]
 
-	created := requestWithCookie(app.Handler(), http.MethodPost, "/api/v1/users",
+	created := requestWithCookie(app.Handler(), http.MethodPost, "/api/users",
 		`{"username":"audit.viewer","password":"audit-password-123","role":"viewer"}`, cookie)
 	if created.Code != http.StatusCreated {
 		t.Fatalf("audited operation failed: %d %s", created.Code, created.Body.String())
 	}
-	audit := requestWithCookie(app.Handler(), http.MethodGet, "/api/v1/audit?action=user.create", "", cookie)
+	audit := requestWithCookie(app.Handler(), http.MethodGet, "/api/audit?action=user.create", "", cookie)
 	if audit.Code != http.StatusOK || !strings.Contains(audit.Body.String(), `"action":"user.create"`) || strings.Contains(audit.Body.String(), "audit-password-123") {
 		t.Fatalf("unexpected audit response: %d %s", audit.Code, audit.Body.String())
 	}

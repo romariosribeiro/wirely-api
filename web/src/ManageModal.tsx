@@ -33,7 +33,7 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [loadVersion, setLoadVersion] = useState(0)
-  const endpoint = `/api/v1/instances/${instance.id}`
+  const endpoint = `/api/instances/${instance.id}`
   const dirty = config !== null && (url !== config.url || enabled !== config.enabled ||
     JSON.stringify([...events].sort()) !== JSON.stringify([...config.events].sort()))
 

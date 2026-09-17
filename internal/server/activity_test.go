@@ -51,7 +51,7 @@ func TestActivityAPIFiltersAndPaginates(t *testing.T) {
 
 	app := New(Dependencies{Store: store})
 	cookie := authenticatedCookie(t, store, app.Handler())
-	request := httptest.NewRequest(http.MethodGet, "/api/v1/instances/"+instance.ID+"/events?category=messages&page=1&pageSize=1", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/instances/"+instance.ID+"/events?category=messages&page=1&pageSize=1", nil)
 	request.AddCookie(cookie)
 	response := httptest.NewRecorder()
 	app.Handler().ServeHTTP(response, request)
@@ -62,7 +62,7 @@ func TestActivityAPIFiltersAndPaginates(t *testing.T) {
 		t.Fatalf("unexpected activity response: %s", response.Body.String())
 	}
 
-	invalid := httptest.NewRequest(http.MethodGet, "/api/v1/instances/"+instance.ID+"/events?category=unknown", nil)
+	invalid := httptest.NewRequest(http.MethodGet, "/api/instances/"+instance.ID+"/events?category=unknown", nil)
 	invalid.AddCookie(cookie)
 	invalidResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(invalidResponse, invalid)
@@ -95,7 +95,7 @@ func TestFailedWebhookDeliveryCanBeRetried(t *testing.T) {
 	retrier := &fakeWebhookRetrier{}
 	app := New(Dependencies{Store: store, Webhooks: retrier})
 	cookie := authenticatedCookie(t, store, app.Handler())
-	url := "/api/v1/instances/" + instance.ID + "/webhook-deliveries/" + jsonInt(deliveries[0].ID) + "/retry"
+	url := "/api/instances/" + instance.ID + "/webhook-deliveries/" + jsonInt(deliveries[0].ID) + "/retry"
 	request := httptest.NewRequest(http.MethodPost, url, nil)
 	request.AddCookie(cookie)
 	response := httptest.NewRecorder()
@@ -113,7 +113,7 @@ func TestFailedWebhookDeliveryCanBeRetried(t *testing.T) {
 
 func TestActivityAPIRequiresAuthentication(t *testing.T) {
 	store := testStore(t)
-	request := httptest.NewRequest(http.MethodGet, "/api/v1/instances/example/events", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/instances/example/events", nil)
 	response := httptest.NewRecorder()
 	New(Dependencies{Store: store}).Handler().ServeHTTP(response, request)
 	if response.Code != http.StatusUnauthorized {

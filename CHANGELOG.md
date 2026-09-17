@@ -32,8 +32,11 @@ All notable changes to Wirely API are documented here. The project follows
   reactions, with attachment storage isolated by instance.
 - Automatic cleanup of received media after the 30-day history retention period.
 - Send presence simulation with nested `options.presence` and `options.delay`.
-- WhatsApp channel, label, and community endpoints are being evaluated against
-  stable whatsmeow capabilities before becoming part of the public contract.
+
+### Changed
+
+- Administrative and panel endpoints now use the concise `/api/` prefix across
+  the server, frontend, OpenAPI, and documentation.
 
 ## [0.9.0] - 2026-09-17
 

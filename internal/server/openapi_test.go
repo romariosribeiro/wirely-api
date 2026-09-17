@@ -9,7 +9,7 @@ import (
 
 func TestOpenAPISpec(t *testing.T) {
 	app := New(Dependencies{Store: testStore(t)})
-	for _, path := range []string{"/openapi.json", "/api/v1/openapi.json"} {
+	for _, path := range []string{"/openapi.json", "/api/openapi.json"} {
 		request := httptest.NewRequest(http.MethodGet, path, nil)
 		response := httptest.NewRecorder()
 		app.Handler().ServeHTTP(response, request)
@@ -41,15 +41,15 @@ func TestOpenAPISpec(t *testing.T) {
 			"/api/webhook/test", "/api/webhook/jobs/{eventID}", "/api/webhook/deliveries",
 			"/api/groups", "/api/groups/join", "/api/groups/{groupJID}", "/api/groups/{groupJID}/participants", "/api/groups/{groupJID}/invite", "/api/profile", "/api/profile/photo", "/api/profile/privacy",
 			"/api/queue/text", "/api/queue/media", "/api/queue/{jobID}", "/api/queue/{jobID}/retry",
-			"/metrics", "/api/auth/login", "/api/v1/auth/me", "/api/v1/auth/logout", "/api/v1/auth/password",
-			"/api/v1/users", "/api/v1/users/{userID}", "/api/v1/users/{userID}/password",
-			"/api/v1/metrics", "/api/v1/alerts", "/api/v1/audit", "/api/v1/backups",
-			"/api/v1/backups/{backupID}", "/api/v1/backups/{backupID}/download", "/api/v1/backups/{backupID}/restore",
-			"/api/v1/instances", "/api/v1/instances/{id}", "/api/v1/instances/{id}/connect", "/api/v1/instances/{id}/disconnect",
-			"/api/v1/instances/{id}/state", "/api/v1/instances/{id}/qr", "/api/v1/instances/{id}/token", "/api/v1/instances/{id}/webhook",
-			"/api/v1/instances/{id}/events", "/api/v1/instances/{id}/webhook-deliveries", "/api/v1/instances/{id}/webhook-deliveries/{deliveryID}/retry",
-			"/api/v1/instances/{id}/contacts", "/api/v1/instances/{id}/chats", "/api/v1/instances/{id}/chats/{chat}/messages",
-			"/api/v1/instances/{id}/chats/{chat}/read", "/api/v1/instances/{id}/queue", "/api/v1/instances/{id}/queue/{jobID}", "/api/v1/instances/{id}/queue/{jobID}/retry"} {
+			"/metrics", "/api/auth/login", "/api/auth/me", "/api/auth/logout", "/api/auth/password",
+			"/api/users", "/api/users/{userID}", "/api/users/{userID}/password",
+			"/api/metrics", "/api/alerts", "/api/audit", "/api/backups",
+			"/api/backups/{backupID}", "/api/backups/{backupID}/download", "/api/backups/{backupID}/restore",
+			"/api/instances", "/api/instances/{id}", "/api/instances/{id}/connect", "/api/instances/{id}/disconnect",
+			"/api/instances/{id}/state", "/api/instances/{id}/qr", "/api/instances/{id}/token", "/api/instances/{id}/webhook",
+			"/api/instances/{id}/events", "/api/instances/{id}/webhook-deliveries", "/api/instances/{id}/webhook-deliveries/{deliveryID}/retry",
+			"/api/instances/{id}/contacts", "/api/instances/{id}/chats", "/api/instances/{id}/chats/{chat}/messages",
+			"/api/instances/{id}/chats/{chat}/read", "/api/instances/{id}/queue", "/api/instances/{id}/queue/{jobID}", "/api/instances/{id}/queue/{jobID}/retry"} {
 			if _, ok := spec.Paths[endpoint]; !ok {
 				t.Fatalf("missing documented endpoint %s", endpoint)
 			}
@@ -58,9 +58,6 @@ func TestOpenAPISpec(t *testing.T) {
 			if _, ok := spec.Paths[removed]; ok {
 				t.Fatalf("removed endpoint is still documented: %s", removed)
 			}
-		}
-		if _, ok := spec.Paths["/api/v1/auth/login"]; ok {
-			t.Fatal("removed login endpoint is still documented")
 		}
 		securitySchemes, ok := spec.Components["securitySchemes"].(map[string]any)
 		if !ok || securitySchemes["BearerAuth"] == nil || securitySchemes["CookieAuth"] == nil {

@@ -30,7 +30,7 @@ func TestBackupPanelAPIIsOwnerOnly(t *testing.T) {
 	app := New(Dependencies{Store: store, Backups: manager})
 	ownerCookie := loginUser(t, app.Handler(), "admin", ownerPassword)
 
-	created := requestWithCookie(app.Handler(), http.MethodPost, "/api/v1/backups", "", ownerCookie)
+	created := requestWithCookie(app.Handler(), http.MethodPost, "/api/backups", "", ownerCookie)
 	if created.Code != http.StatusCreated {
 		t.Fatalf("backup creation failed: %d %s", created.Code, created.Body.String())
 	}
@@ -38,11 +38,11 @@ func TestBackupPanelAPIIsOwnerOnly(t *testing.T) {
 	if err := json.Unmarshal(created.Body.Bytes(), &item); err != nil || item.ID == "" {
 		t.Fatalf("invalid backup response: %#v %v", item, err)
 	}
-	listed := requestWithCookie(app.Handler(), http.MethodGet, "/api/v1/backups", "", ownerCookie)
+	listed := requestWithCookie(app.Handler(), http.MethodGet, "/api/backups", "", ownerCookie)
 	if listed.Code != http.StatusOK || !strings.Contains(listed.Body.String(), item.ID) {
 		t.Fatalf("backup was not listed: %d %s", listed.Code, listed.Body.String())
 	}
-	download := requestWithCookie(app.Handler(), http.MethodGet, "/api/v1/backups/"+item.ID+"/download", "", ownerCookie)
+	download := requestWithCookie(app.Handler(), http.MethodGet, "/api/backups/"+item.ID+"/download", "", ownerCookie)
 	if download.Code != http.StatusOK || download.Header().Get("Content-Type") != "application/zip" || download.Body.Len() == 0 {
 		t.Fatalf("backup download failed: %d %#v", download.Code, download.Header())
 	}
@@ -52,12 +52,12 @@ func TestBackupPanelAPIIsOwnerOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 	adminCookie := loginUser(t, app.Handler(), admin.Username, "backup-admin-password")
-	denied := requestWithCookie(app.Handler(), http.MethodGet, "/api/v1/backups", "", adminCookie)
+	denied := requestWithCookie(app.Handler(), http.MethodGet, "/api/backups", "", adminCookie)
 	if denied.Code != http.StatusForbidden {
 		t.Fatalf("admin accessed owner backup: %d", denied.Code)
 	}
 
-	deleted := requestWithCookie(app.Handler(), http.MethodDelete, "/api/v1/backups/"+item.ID, "", ownerCookie)
+	deleted := requestWithCookie(app.Handler(), http.MethodDelete, "/api/backups/"+item.ID, "", ownerCookie)
 	if deleted.Code != http.StatusNoContent {
 		t.Fatalf("backup deletion failed: %d %s", deleted.Code, deleted.Body.String())
 	}

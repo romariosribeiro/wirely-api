@@ -56,7 +56,7 @@ func TestInboxAPIListsContactsChatsAndMessages(t *testing.T) {
 	app := New(Dependencies{Store: store, Contacts: contacts})
 	cookie := authenticatedCookie(t, store, app.Handler())
 
-	contactRequest := httptest.NewRequest(http.MethodGet, "/api/v1/instances/"+instance.ID+"/contacts?search=premium", nil)
+	contactRequest := httptest.NewRequest(http.MethodGet, "/api/instances/"+instance.ID+"/contacts?search=premium", nil)
 	contactRequest.AddCookie(cookie)
 	contactResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(contactResponse, contactRequest)
@@ -64,7 +64,7 @@ func TestInboxAPIListsContactsChatsAndMessages(t *testing.T) {
 		t.Fatalf("unexpected contacts response: %d %s", contactResponse.Code, contactResponse.Body.String())
 	}
 
-	chatRequest := httptest.NewRequest(http.MethodGet, "/api/v1/instances/"+instance.ID+"/chats?search=premium", nil)
+	chatRequest := httptest.NewRequest(http.MethodGet, "/api/instances/"+instance.ID+"/chats?search=premium", nil)
 	chatRequest.AddCookie(cookie)
 	chatResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(chatResponse, chatRequest)
@@ -72,7 +72,7 @@ func TestInboxAPIListsContactsChatsAndMessages(t *testing.T) {
 		t.Fatalf("unexpected chats response: %d %s", chatResponse.Code, chatResponse.Body.String())
 	}
 
-	messageRequest := httptest.NewRequest(http.MethodGet, "/api/v1/instances/"+instance.ID+"/chats/"+chat+"/messages", nil)
+	messageRequest := httptest.NewRequest(http.MethodGet, "/api/instances/"+instance.ID+"/chats/"+chat+"/messages", nil)
 	messageRequest.AddCookie(cookie)
 	messageResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(messageResponse, messageRequest)
@@ -80,7 +80,7 @@ func TestInboxAPIListsContactsChatsAndMessages(t *testing.T) {
 		t.Fatalf("unexpected messages response: %d %s", messageResponse.Code, messageResponse.Body.String())
 	}
 
-	readRequest := httptest.NewRequest(http.MethodPost, "/api/v1/instances/"+instance.ID+"/chats/"+chat+"/read", nil)
+	readRequest := httptest.NewRequest(http.MethodPost, "/api/instances/"+instance.ID+"/chats/"+chat+"/read", nil)
 	readRequest.AddCookie(cookie)
 	readResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(readResponse, readRequest)
@@ -88,7 +88,7 @@ func TestInboxAPIListsContactsChatsAndMessages(t *testing.T) {
 		t.Fatalf("mark read failed: %d %s", readResponse.Code, readResponse.Body.String())
 	}
 	chatResponse = httptest.NewRecorder()
-	chatRequest = httptest.NewRequest(http.MethodGet, "/api/v1/instances/"+instance.ID+"/chats", nil)
+	chatRequest = httptest.NewRequest(http.MethodGet, "/api/instances/"+instance.ID+"/chats", nil)
 	chatRequest.AddCookie(cookie)
 	app.Handler().ServeHTTP(chatResponse, chatRequest)
 	if !strings.Contains(chatResponse.Body.String(), `"unreadCount":0`) {
@@ -107,7 +107,7 @@ func TestInboxAPISendsReplyThroughChatSender(t *testing.T) {
 	cookie := authenticatedCookie(t, store, app.Handler())
 	chat := "120363000000@g.us"
 	body, _ := json.Marshal(map[string]string{"message": "Resposta pelo painel"})
-	request := httptest.NewRequest(http.MethodPost, "/api/v1/instances/"+instance.ID+"/chats/"+chat+"/messages", bytes.NewReader(body))
+	request := httptest.NewRequest(http.MethodPost, "/api/instances/"+instance.ID+"/chats/"+chat+"/messages", bytes.NewReader(body))
 	request.AddCookie(cookie)
 	response := httptest.NewRecorder()
 	app.Handler().ServeHTTP(response, request)
@@ -121,7 +121,7 @@ func TestInboxAPISendsReplyThroughChatSender(t *testing.T) {
 
 func TestInboxRoutesRequireAuthentication(t *testing.T) {
 	store := testStore(t)
-	request := httptest.NewRequest(http.MethodGet, "/api/v1/instances/example/chats", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/instances/example/chats", nil)
 	response := httptest.NewRecorder()
 	New(Dependencies{Store: store}).Handler().ServeHTTP(response, request)
 	if response.Code != http.StatusUnauthorized {

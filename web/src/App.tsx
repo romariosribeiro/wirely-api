@@ -89,7 +89,7 @@ function PasswordModal({ onClose, onChanged }: { onClose: () => void; onChanged:
     setBusy(true)
     setError('')
     try {
-      await request('/api/v1/auth/password', {
+      await request('/api/auth/password', {
         method: 'PUT',
         body: JSON.stringify({ currentPassword, newPassword }),
       })
@@ -189,7 +189,7 @@ function Dashboard({
 
   const loadInstances = useCallback(async () => {
     try {
-      const response = await request<{ data: Instance[] }>('/api/v1/instances')
+      const response = await request<{ data: Instance[] }>('/api/instances')
       setInstances(response.data)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Falha ao carregar instâncias')
@@ -198,7 +198,7 @@ function Dashboard({
 
   useEffect(() => {
     let active = true
-    request<{ data: Instance[] }>('/api/v1/instances')
+    request<{ data: Instance[] }>('/api/instances')
       .then((response) => {
         if (active) setInstances(response.data)
       })
@@ -218,7 +218,7 @@ function Dashboard({
     let active = true
     const loadMetrics = async () => {
       try {
-        const value = await request<MetricsSnapshot>('/api/v1/metrics?range=24h')
+        const value = await request<MetricsSnapshot>('/api/metrics?range=24h')
         if (active) setMetrics(value)
       } catch {
         // Instance controls remain usable if operational metrics are temporarily unavailable.
@@ -239,7 +239,7 @@ function Dashboard({
     const controller = new AbortController()
     const poll = async () => {
       try {
-        const state = await request<ConnectionState>(`/api/v1/instances/${selected.id}/state`, { signal: controller.signal })
+        const state = await request<ConnectionState>(`/api/instances/${selected.id}/state`, { signal: controller.signal })
         if (!active) return
         setConnection(state)
         if (state.qrAvailable) setHasShownQR(true)
@@ -265,7 +265,7 @@ function Dashboard({
     setBusy(true)
     setError('')
     try {
-      const instance = await request<Instance>('/api/v1/instances', {
+      const instance = await request<Instance>('/api/instances', {
         method: 'POST',
         body: JSON.stringify({ name }),
       })
@@ -287,7 +287,7 @@ function Dashboard({
     setSelected(instance)
     setConnection({ status: 'connecting', qrAvailable: false })
     try {
-      await request(`/api/v1/instances/${instance.id}/connect`, { method: 'POST' })
+      await request(`/api/instances/${instance.id}/connect`, { method: 'POST' })
       setConnectReady(true)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Falha ao iniciar conexão')
@@ -299,7 +299,7 @@ function Dashboard({
 
   async function closePairing() {
     if (selected && connection?.status !== 'connected') {
-      await request(`/api/v1/instances/${selected.id}/disconnect`, { method: 'POST' })
+      await request(`/api/instances/${selected.id}/disconnect`, { method: 'POST' })
     }
     setSelected(null)
     setConnection(null)
@@ -310,7 +310,7 @@ function Dashboard({
     if (!window.confirm(`Desconectar ${instance.name} do WhatsApp?`)) return
     setError('')
     try {
-      await request(`/api/v1/instances/${instance.id}/disconnect`, { method: 'POST' })
+      await request(`/api/instances/${instance.id}/disconnect`, { method: 'POST' })
       await loadInstances()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Falha ao desconectar a instância')
@@ -463,7 +463,7 @@ export default function App() {
 
   const authenticate = useCallback(async () => {
     try {
-      const current = await request<User>('/api/v1/auth/me')
+      const current = await request<User>('/api/auth/me')
       setUser(current); setState('authenticated')
     } catch {
       setUser(null); setState('guest')
@@ -481,7 +481,7 @@ export default function App() {
   }, [])
 
   async function logout() {
-    await request('/api/v1/auth/logout', { method: 'POST' }).catch(() => undefined)
+    await request('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
     setUser(null); setState('guest')
   }
 

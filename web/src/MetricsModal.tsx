@@ -34,7 +34,7 @@ export function MetricsModal({ onClose }: { onClose: () => void }) {
     else setRefreshing(true)
     setError('')
     try {
-      setMetrics(await request<MetricsSnapshot>(`/api/v1/metrics?range=${range}`))
+      setMetrics(await request<MetricsSnapshot>(`/api/metrics?range=${range}`))
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Falha ao carregar métricas')
     } finally {
@@ -56,7 +56,7 @@ export function MetricsModal({ onClose }: { onClose: () => void }) {
     const fetchMetrics = async (background = false) => {
       if (background && active) setRefreshing(true)
       try {
-        const value = await request<MetricsSnapshot>(`/api/v1/metrics?range=${range}`, { signal: controller.signal })
+        const value = await request<MetricsSnapshot>(`/api/metrics?range=${range}`, { signal: controller.signal })
         if (active) { setMetrics(value); setError('') }
       } catch (reason) {
         if (active) setError(reason instanceof Error ? reason.message : 'Falha ao carregar métricas')

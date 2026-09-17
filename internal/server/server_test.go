@@ -24,7 +24,7 @@ func testStore(t *testing.T) *storage.Store {
 
 func TestHealth(t *testing.T) {
 	store := testStore(t)
-	request := httptest.NewRequest(http.MethodGet, "/api/v1/health", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/health", nil)
 	response := httptest.NewRecorder()
 	New(Dependencies{Store: store}).Handler().ServeHTTP(response, request)
 
@@ -38,7 +38,7 @@ func TestHealth(t *testing.T) {
 
 func TestInstancesRequireAuthentication(t *testing.T) {
 	store := testStore(t)
-	request := httptest.NewRequest(http.MethodGet, "/api/v1/instances", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/instances", nil)
 	response := httptest.NewRecorder()
 	New(Dependencies{Store: store}).Handler().ServeHTTP(response, request)
 
@@ -59,12 +59,6 @@ func TestShortAdminLoginEndpointCreatesSession(t *testing.T) {
 	New(Dependencies{Store: store}).Handler().ServeHTTP(response, request)
 	if response.Code != http.StatusOK || len(response.Result().Cookies()) == 0 {
 		t.Fatalf("short login failed: %d %s", response.Code, response.Body.String())
-	}
-	removed := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewReader(body))
-	removedResponse := httptest.NewRecorder()
-	New(Dependencies{Store: store}).Handler().ServeHTTP(removedResponse, removed)
-	if removedResponse.Code != http.StatusNotFound {
-		t.Fatalf("removed login endpoint returned %d", removedResponse.Code)
 	}
 }
 
@@ -89,7 +83,7 @@ func TestCreateAndListInstances(t *testing.T) {
 	}
 
 	createBody, _ := json.Marshal(map[string]string{"name": "Principal"})
-	create := httptest.NewRequest(http.MethodPost, "/api/v1/instances", bytes.NewReader(createBody))
+	create := httptest.NewRequest(http.MethodPost, "/api/instances", bytes.NewReader(createBody))
 	create.AddCookie(cookies[0])
 	createResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(createResponse, create)
@@ -97,7 +91,7 @@ func TestCreateAndListInstances(t *testing.T) {
 		t.Fatalf("create failed with status %d: %s", createResponse.Code, createResponse.Body.String())
 	}
 
-	list := httptest.NewRequest(http.MethodGet, "/api/v1/instances", nil)
+	list := httptest.NewRequest(http.MethodGet, "/api/instances", nil)
 	list.AddCookie(cookies[0])
 	listResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(listResponse, list)
@@ -143,7 +137,7 @@ func TestPublicSendTextRequiresBearerToken(t *testing.T) {
 
 func TestUnknownAPIRouteReturnsJSONNotFound(t *testing.T) {
 	store := testStore(t)
-	request := httptest.NewRequest(http.MethodPost, "/api/v1/instances/example/messages/text", nil)
+	request := httptest.NewRequest(http.MethodPost, "/api/instances/example/messages/text", nil)
 	response := httptest.NewRecorder()
 	New(Dependencies{Store: store}).Handler().ServeHTTP(response, request)
 
@@ -176,7 +170,7 @@ func TestChangePasswordRevokesSessions(t *testing.T) {
 	}
 
 	shortBody, _ := json.Marshal(map[string]string{"currentPassword": password, "newPassword": "short"})
-	shortChange := httptest.NewRequest(http.MethodPut, "/api/v1/auth/password", bytes.NewReader(shortBody))
+	shortChange := httptest.NewRequest(http.MethodPut, "/api/auth/password", bytes.NewReader(shortBody))
 	shortChange.AddCookie(cookies[0])
 	shortResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(shortResponse, shortChange)
@@ -185,7 +179,7 @@ func TestChangePasswordRevokesSessions(t *testing.T) {
 	}
 
 	wrongBody, _ := json.Marshal(map[string]string{"currentPassword": "incorrect-password", "newPassword": "another-secure-password"})
-	wrongChange := httptest.NewRequest(http.MethodPut, "/api/v1/auth/password", bytes.NewReader(wrongBody))
+	wrongChange := httptest.NewRequest(http.MethodPut, "/api/auth/password", bytes.NewReader(wrongBody))
 	wrongChange.AddCookie(cookies[0])
 	wrongResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(wrongResponse, wrongChange)
@@ -193,7 +187,7 @@ func TestChangePasswordRevokesSessions(t *testing.T) {
 		t.Fatalf("incorrect current password should be rejected, got status %d", wrongResponse.Code)
 	}
 
-	stillValid := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+	stillValid := httptest.NewRequest(http.MethodGet, "/api/auth/me", nil)
 	stillValid.AddCookie(cookies[0])
 	stillValidResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(stillValidResponse, stillValid)
@@ -203,7 +197,7 @@ func TestChangePasswordRevokesSessions(t *testing.T) {
 
 	const newPassword = "a-new-secure-password"
 	changeBody, _ := json.Marshal(map[string]string{"currentPassword": password, "newPassword": newPassword})
-	change := httptest.NewRequest(http.MethodPut, "/api/v1/auth/password", bytes.NewReader(changeBody))
+	change := httptest.NewRequest(http.MethodPut, "/api/auth/password", bytes.NewReader(changeBody))
 	change.AddCookie(cookies[0])
 	changeResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(changeResponse, change)
@@ -211,7 +205,7 @@ func TestChangePasswordRevokesSessions(t *testing.T) {
 		t.Fatalf("password change failed with status %d: %s", changeResponse.Code, changeResponse.Body.String())
 	}
 
-	me := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+	me := httptest.NewRequest(http.MethodGet, "/api/auth/me", nil)
 	me.AddCookie(cookies[0])
 	meResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(meResponse, me)
@@ -255,7 +249,7 @@ func TestWebhookConfiguration(t *testing.T) {
 		t.Fatalf("login failed: %d %s", loginResponse.Code, loginResponse.Body.String())
 	}
 	cookie := loginResponse.Result().Cookies()[0]
-	endpoint := "/api/v1/instances/" + instance.ID + "/webhook"
+	endpoint := "/api/instances/" + instance.ID + "/webhook"
 
 	get := httptest.NewRequest(http.MethodGet, endpoint, nil)
 	get.AddCookie(cookie)

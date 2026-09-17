@@ -34,7 +34,7 @@ written in Go and the panel uses React, TypeScript, and Vite.
 - Persistent administrative audit trail, login lockout, and per-instance API rate limiting
 - Daily automatic backups, owner-only panel restore, downloads, retention, and pre-restore safety copies
 - Complete OpenAPI coverage for public and administrative routes
-- Health endpoint at `GET /api/v1/health`
+- Health endpoint at `GET /api/health`
 - Shell installer and hardened systemd service
 
 ## Requirements for development
@@ -158,7 +158,7 @@ The **Testar API** button on a connected instance opens a playground that exerci
 the same public endpoints used by external integrations. **Documentação** in the
 top navigation generates copy-ready cURL, Laravel, Node.js, and Python examples
 using the selected instance. The machine-readable OpenAPI 3.1 specification is
-available at `GET /openapi.json` and `GET /api/v1/openapi.json`.
+available at `GET /openapi.json` and `GET /api/openapi.json`.
 
 | Type | Endpoint | Body |
 | --- | --- | --- |
@@ -273,7 +273,7 @@ panel's HttpOnly session cookie:
 
 ```bash
 curl --cookie 'wirely_session=YOUR_SESSION' \
-  'https://wirely.example.com/api/v1/metrics?range=24h'
+  'https://wirely.example.com/api/metrics?range=24h'
 ```
 
 The queue's pending count is a current snapshot, while terminal queue states,
@@ -302,8 +302,8 @@ service. The archive is applied before any database opens.
 Prometheus-compatible metrics are available at `GET /metrics`. This endpoint
 contains aggregate operational values and no instance names, tokens, message
 content, or webhook secrets. The JSON dashboard remains at
-`GET /api/v1/metrics`; active alerts are at `GET /api/v1/alerts`; audit entries
-are at `GET /api/v1/audit`. Application and HTTP request logs are emitted as
+`GET /api/metrics`; active alerts are at `GET /api/alerts`; audit entries
+are at `GET /api/audit`. Application and HTTP request logs are emitted as
 one JSON object per line for journal ingestion.
 
 ## Reliable message queue
@@ -358,7 +358,7 @@ from creating multiple jobs, but it cannot eliminate this transport-level edge c
 ### Token storage
 
 Authentication uses a SHA-256 hash. A separate AES-256-GCM encrypted copy is
-returned only by the admin-session-protected `GET /api/v1/instances/{id}/token`
+returned only by the admin-session-protected `GET /api/instances/{id}/token`
 endpoint, with `Cache-Control: no-store`; instance lists never contain tokens.
 Tokens from older installations have only a hash and remain valid, but require
 one manual rotation to become visible (`regenerationRequired: true`).
@@ -398,11 +398,11 @@ must contain 12 to 128 characters and are stored using PBKDF2-SHA256.
 
 Administrative team endpoints use the panel's HttpOnly `wirely_session` cookie:
 
-- `GET /api/v1/users`
-- `POST /api/v1/users`
-- `PATCH /api/v1/users/{userID}`
-- `PUT /api/v1/users/{userID}/password`
-- `DELETE /api/v1/users/{userID}`
+- `GET /api/users`
+- `POST /api/users`
+- `PATCH /api/users/{userID}`
+- `PUT /api/users/{userID}/password`
+- `DELETE /api/users/{userID}`
 
 These endpoints are included in the OpenAPI specification. Do not expose the
 panel over plain HTTP in production; place Wirely behind HTTPS and set
@@ -420,7 +420,7 @@ curl -X POST 'http://localhost:8080/api/auth/login' \
   -c wirely.cookies \
   -d '{"username":"admin","password":"SUA_SENHA"}'
 
-curl 'http://localhost:8080/api/v1/instances' \
+curl 'http://localhost:8080/api/instances' \
   -b wirely.cookies
 ```
 
@@ -429,9 +429,9 @@ requests reuse the HttpOnly session cookie.
 
 | Method | Endpoint | Operation |
 | --- | --- | --- |
-| `GET` | `/api/v1/instances` | List every instance |
-| `POST` | `/api/v1/instances` | Create an instance and its first token |
-| `DELETE` | `/api/v1/instances/{id}` | Permanently delete an instance |
+| `GET` | `/api/instances` | List every instance |
+| `POST` | `/api/instances` | Create an instance and its first token |
+| `DELETE` | `/api/instances/{id}` | Permanently delete an instance |
 
 All remaining operations use the instance Bearer token, which means an
 integration never sends an instance ID:
@@ -496,7 +496,7 @@ video, audio, document, and sticker events are downloaded, decrypted, and stored
 locally before the webhook is delivered. Existing webhooks default to Messages
 and Instance connection; an empty selection sends no events.
 
-The administrative `PUT /api/v1/instances/{id}/webhook` accepts
+The administrative `PUT /api/instances/{id}/webhook` accepts
 `{ "url": "https://example.com/events", "enabled": true, "events": ["messages", "connection"], "rotateSecret": false }`.
 The original URL-only payload remains supported for existing integrations.
 

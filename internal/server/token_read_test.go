@@ -22,7 +22,7 @@ func TestReadInstanceTokenRequiresAdmin(t *testing.T) {
 		t.Fatal(err)
 	}
 	app := New(Dependencies{Store: s})
-	endpoint := "/api/v1/instances/" + instance.ID + "/token"
+	endpoint := "/api/instances/" + instance.ID + "/token"
 	for _, bearer := range []string{"", instance.APIToken} {
 		r := httptest.NewRequest(http.MethodGet, endpoint, nil)
 		r.Header.Set("Authorization", "Bearer "+bearer)
@@ -32,7 +32,7 @@ func TestReadInstanceTokenRequiresAdmin(t *testing.T) {
 			t.Fatal("only an admin session may read tokens")
 		}
 	}
-	for _, path := range []string{endpoint, "/api/v1/instances/missing/token", "/api/v1/instances"} {
+	for _, path := range []string{endpoint, "/api/instances/missing/token", "/api/instances"} {
 		r := httptest.NewRequest(http.MethodGet, path, nil)
 		r.AddCookie(&http.Cookie{Name: sessionCookieName, Value: session})
 		w := httptest.NewRecorder()

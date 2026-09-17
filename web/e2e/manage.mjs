@@ -29,7 +29,7 @@ let browser
 try {
  for (let i = 0; i < 100; i++) {
   if (app.exitCode !== null) throw new Error('Isolated backend exited before becoming ready')
-  if (password && await fetch(base + '/api/v1/health').then((r) => r.ok).catch(() => false)) break
+  if (password && await fetch(base + '/api/health').then((r) => r.ok).catch(() => false)) break
   await new Promise((resolve) => setTimeout(resolve, 100))
  }
  assert.ok(password, 'initial credentials missing')
@@ -37,7 +37,7 @@ try {
  const page = await browser.newPage({ viewport: { width: 1440, height: 1050 } })
  const errors = []
  page.on('pageerror', (error) => errors.push(error.message))
- page.on('console', (message) => { if (message.type() === 'error' && !(message.location().url === base + '/api/v1/auth/me' && message.text().includes('401'))) errors.push(message.text()) })
+ page.on('console', (message) => { if (message.type() === 'error' && !(message.location().url === base + '/api/auth/me' && message.text().includes('401'))) errors.push(message.text()) })
  page.on('dialog', (dialog) => dialog.accept())
  await page.goto(base)
  await page.getByLabel('Senha', { exact: true }).fill(password)
@@ -55,8 +55,8 @@ try {
  await modal.getByRole('checkbox', { name: 'Status do WhatsApp' }).check()
  await modal.getByRole('button', { name: 'Salvar webhook', exact: true }).click()
  await modal.getByText('Webhook salvo com os eventos selecionados.').waitFor()
- const { data } = await page.request.get(base + '/api/v1/instances').then((r) => r.json())
- const endpoint = base + '/api/v1/instances/' + data[0].id
+ const { data } = await page.request.get(base + '/api/instances').then((r) => r.json())
+ const endpoint = base + '/api/instances/' + data[0].id
  let config = await page.request.get(endpoint + '/webhook').then((r) => r.json())
  assert.deepEqual(config.events.sort(), ['messages', 'status'])
  assert.equal(config.enabled, true)
@@ -64,7 +64,7 @@ try {
  await modal.getByRole('button', { name: 'Fechar', exact: true }).click()
 
  // Metrics use the real authenticated endpoint and remain usable on desktop and mobile.
- const metricsAPI = await page.request.get(base + '/api/v1/metrics?range=24h')
+ const metricsAPI = await page.request.get(base + '/api/metrics?range=24h')
  assert.equal(metricsAPI.status(), 200)
  const metricsPayload = await metricsAPI.json()
  assert.equal(metricsPayload.range, '24h')
@@ -73,7 +73,7 @@ try {
  await page.getByRole('button', { name: 'Métricas', exact: true }).click()
  await modal.getByRole('heading', { name: 'Métricas operacionais', exact: true }).waitFor()
  await modal.getByText('Teste gerenciamento', { exact: true }).waitFor()
- const sevenDayResponse = page.waitForResponse((response) => response.url().includes('/api/v1/metrics?range=7d') && response.status() === 200)
+ const sevenDayResponse = page.waitForResponse((response) => response.url().includes('/api/metrics?range=7d') && response.status() === 200)
  await modal.getByRole('button', { name: '7 dias', exact: true }).click()
  await sevenDayResponse
  await page.screenshot({ path: '/tmp/wirely-metrics-desktop.png', fullPage: true, animations: 'disabled' })
@@ -100,9 +100,9 @@ try {
   data: { username: 'operator.browser', password: 'operator-browser-123' },
  })
  assert.equal(operatorLogin.status(), 200)
- assert.equal((await operatorContext.request.get(base + '/api/v1/instances')).status(), 200)
- assert.equal((await operatorContext.request.post(base + '/api/v1/instances', { data: { name: 'Negada' } })).status(), 403)
- assert.equal((await operatorContext.request.get(base + '/api/v1/users')).status(), 403)
+ assert.equal((await operatorContext.request.get(base + '/api/instances')).status(), 200)
+ assert.equal((await operatorContext.request.post(base + '/api/instances', { data: { name: 'Negada' } })).status(), 403)
+ assert.equal((await operatorContext.request.get(base + '/api/users')).status(), 403)
  const operatorPage = await operatorContext.newPage({ viewport: { width: 1280, height: 800 } })
  await operatorPage.goto(base)
  await operatorPage.getByRole('heading', { name: 'Instâncias', exact: true }).waitFor()
@@ -113,7 +113,7 @@ try {
  await operatorRow.getByLabel('Papel de operator.browser').selectOption('viewer')
  await operatorRow.getByRole('button', { name: 'Salvar', exact: true }).click()
  await modal.getByText('Permissões de operator.browser atualizadas.').waitFor()
- assert.equal((await operatorContext.request.get(base + '/api/v1/auth/me')).status(), 401)
+ assert.equal((await operatorContext.request.get(base + '/api/auth/me')).status(), 401)
  operatorRow = modal.locator('.userRow', { hasText: 'operator.browser' })
  await operatorRow.getByRole('button', { name: 'Redefinir senha' }).click()
  await modal.getByLabel('Nova senha de operator.browser').fill('operator-reset-456')
@@ -141,9 +141,9 @@ try {
  assert.ok(specification.paths['/api/queue/media'])
  assert.ok(specification.paths['/api/queue/text'])
  assert.ok(specification.paths['/api/queue/{jobID}/retry'])
- assert.ok(specification.paths['/api/v1/users'])
- assert.ok(specification.paths['/api/v1/metrics'])
- assert.ok(specification.paths['/api/v1/users/{userID}/password'])
+ assert.ok(specification.paths['/api/users'])
+ assert.ok(specification.paths['/api/metrics'])
+ assert.ok(specification.paths['/api/users/{userID}/password'])
  assert.ok(specification.components.schemas.MessageJob)
  assert.ok(specification.components.schemas.User)
  assert.ok(specification.components.schemas.MetricsSnapshot)
@@ -189,7 +189,7 @@ try {
  await page.setViewportSize({ width: 1440, height: 1050 })
 
  // Inbox data is simulated, while the browser exercises the real authenticated UI and routes.
- const inboxInstancesPattern = '**/api/v1/instances'
+ const inboxInstancesPattern = '**/api/instances'
  const inboxChatsPattern = /\/api\/v1\/instances\/[^/]+\/chats\?/
  const inboxContactsPattern = /\/api\/v1\/instances\/[^/]+\/contacts\?/
  const inboxMessagesPattern = /\/api\/v1\/instances\/[^/]+\/chats\/[^/]+\/messages(?:\?|$)/
@@ -252,31 +252,31 @@ try {
 
  // Activity history is simulated so the isolated test never needs a real WhatsApp connection or external webhook.
  let retryCalls = 0
- await page.route('**/api/v1/instances/*/events?*', (route) => route.fulfill({ json: {
+ await page.route('**/api/instances/*/events?*', (route) => route.fulfill({ json: {
   data: [{ id: 'evt_browser', instanceId: data[0].id, event: 'message.received', timestamp: '2026-09-16T20:00:00Z', data: { id: 'msg_browser', from: '5511999999999@s.whatsapp.net', text: 'Mensagem do histórico' } }],
   page: 1, pageSize: 20, total: 1, totalPages: 1,
  } }))
- await page.route('**/api/v1/instances/*/webhook-deliveries?*', (route) => route.fulfill({ json: {
+ await page.route('**/api/instances/*/webhook-deliveries?*', (route) => route.fulfill({ json: {
   data: [{ id: 7, eventId: 'evt_browser', instanceId: data[0].id, event: 'message.received', url: 'https://example.com/events', attempt: 3, status: 'failed', httpStatus: 502, error: 'endpoint returned HTTP 502', durationMs: 42, manual: false, createdAt: '2026-09-16T20:00:01Z' }],
   page: 1, pageSize: 20, total: 1, totalPages: 1,
  } }))
- await page.route('**/api/v1/instances/*/webhook-deliveries/*/retry', (route) => {
+ await page.route('**/api/instances/*/webhook-deliveries/*/retry', (route) => {
   retryCalls++
   return route.fulfill({ json: { status: 'delivered', eventId: 'evt_browser' } })
  })
  let queueRetries = 0
  let queueCancels = 0
- await page.route('**/api/v1/instances/*/queue?*', (route) => route.fulfill({ json: {
+ await page.route('**/api/instances/*/queue?*', (route) => route.fulfill({ json: {
   data: [
    { id: 'job_browser', instanceId: data[0].id, kind: 'text', recipient: '5511999999999', payload: { message: 'Mensagem agendada' }, status: queueCancels ? 'canceled' : 'queued', attempt: 0, maxAttempts: 5, scheduledAt: '2026-09-17T20:00:00Z', createdAt: '2026-09-16T20:00:00Z', updatedAt: '2026-09-16T20:00:00Z' },
    { id: 'job_failed', instanceId: data[0].id, kind: 'image', recipient: '5511888888888', payload: { caption: 'Imagem da fila', fileName: 'photo.png', fileSize: 2048 }, status: queueRetries ? 'queued' : 'failed', attempt: queueRetries ? 0 : 5, maxAttempts: 5, scheduledAt: '2026-09-16T19:00:00Z', lastError: queueRetries ? '' : 'instance is not connected', createdAt: '2026-09-16T19:00:00Z', updatedAt: '2026-09-16T20:00:00Z' },
   ], page: 1, pageSize: 20, total: 2, totalPages: 1,
  } }))
- await page.route('**/api/v1/instances/*/queue/*/retry', (route) => {
+ await page.route('**/api/instances/*/queue/*/retry', (route) => {
   queueRetries++
   return route.fulfill({ status: 202, json: { status: 'queued' } })
  })
- await page.route('**/api/v1/instances/*/queue/*', (route) => {
+ await page.route('**/api/instances/*/queue/*', (route) => {
   queueCancels++
   return route.fulfill({ json: { status: 'canceled' } })
  })
@@ -303,12 +303,12 @@ try {
  assert.equal(await modal.evaluate((el) => el.scrollWidth <= el.clientWidth), true, 'activity modal overflows horizontally')
  await page.screenshot({ path: '/tmp/wirely-activity-mobile.png', fullPage: true, animations: 'disabled' })
  await modal.getByRole('button', { name: 'Fechar histórico' }).click()
- await page.unroute('**/api/v1/instances/*/events?*')
- await page.unroute('**/api/v1/instances/*/webhook-deliveries?*')
- await page.unroute('**/api/v1/instances/*/webhook-deliveries/*/retry')
- await page.unroute('**/api/v1/instances/*/queue?*')
- await page.unroute('**/api/v1/instances/*/queue/*/retry')
- await page.unroute('**/api/v1/instances/*/queue/*')
+ await page.unroute('**/api/instances/*/events?*')
+ await page.unroute('**/api/instances/*/webhook-deliveries?*')
+ await page.unroute('**/api/instances/*/webhook-deliveries/*/retry')
+ await page.unroute('**/api/instances/*/queue?*')
+ await page.unroute('**/api/instances/*/queue/*/retry')
+ await page.unroute('**/api/instances/*/queue/*')
  await page.setViewportSize({ width: 1440, height: 1050 })
 
  await page.getByRole('button', { name: 'Gerenciar', exact: true }).click()
@@ -358,7 +358,7 @@ try {
  await modal.getByRole('button', { name: 'Fechar', exact: true }).click()
  // Legacy hash-only tokens are explained without silently rotating credentials.
  let automaticRotations = 0
- await page.route('**/api/v1/instances/*/token', (route) => {
+ await page.route('**/api/instances/*/token', (route) => {
   if (route.request().method() === 'GET') return route.fulfill({ json: { token: '', regenerationRequired: true } })
   automaticRotations++
   return route.continue()
@@ -369,7 +369,7 @@ try {
  assert.equal(await modal.getByRole('button', { name: 'Copiar', exact: true }).isDisabled(), true)
  assert.equal(automaticRotations, 0)
  await modal.getByRole('button', { name: 'Fechar', exact: true }).click()
- await page.unroute('**/api/v1/instances/*/token')
+ await page.unroute('**/api/instances/*/token')
  // Pairing states are simulated: no real WhatsApp account is connected.
  await page.setViewportSize({ width: 1280, height: 800 })
  await page.screenshot({ path: '/tmp/wirely-dashboard-desktop.png', fullPage: true, animations: 'disabled', mask: [page.getByRole('textbox', { name: 'Token da API', exact: true })] })
@@ -382,16 +382,16 @@ try {
  let stateRequests = 0
  let pairingDisconnects = 0
  let invalidQR = false
- await page.route('**/api/v1/instances/*/connect', (route) => route.fulfill({ status: 204 }))
- await page.route('**/api/v1/instances/*/disconnect', (route) => {
+ await page.route('**/api/instances/*/connect', (route) => route.fulfill({ status: 204 }))
+ await page.route('**/api/instances/*/disconnect', (route) => {
   pairingDisconnects++
   return route.fulfill({ status: 204 })
  })
- await page.route('**/api/v1/instances/*/state', (route) => {
+ await page.route('**/api/instances/*/state', (route) => {
   stateRequests++
   return route.fulfill({ json: pairingState })
  })
- await page.route('**/api/v1/instances/*/qr?*', async (route) => {
+ await page.route('**/api/instances/*/qr?*', async (route) => {
   qrRequests++
   await new Promise((resolve) => setTimeout(resolve, 650))
   await route.fulfill({ contentType: 'image/svg+xml', body: invalidQR ? 'invalid image' : '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><rect width="240" height="240" fill="white"/><path d="M20 20h60v60H20zm140 0h60v60h-60zM20 160h60v60H20z" stroke="black" stroke-width="10" fill="none"/></svg>' })
@@ -450,16 +450,16 @@ try {
  assert.equal(await spinner.count(), 0, 'expired pairing must not spin forever')
  await modal.getByRole('button', { name: 'Cancelar', exact: true }).click()
  await page.emulateMedia({ reducedMotion: 'no-preference' })
- await page.unroute('**/api/v1/instances/*/disconnect')
+ await page.unroute('**/api/instances/*/disconnect')
  let simulatedConnected = true
  let disconnectCalls = 0
- await page.route('**/api/v1/instances', async (route) => {
+ await page.route('**/api/instances', async (route) => {
   const response = await route.fetch()
   const result = await response.json()
   result.data = result.data.map((item) => ({ ...item, status: simulatedConnected ? 'connected' : 'disconnected' }))
   await route.fulfill({ response, json: result })
  })
- await page.route('**/api/v1/instances/*/disconnect', async (route) => {
+ await page.route('**/api/instances/*/disconnect', async (route) => {
   assert.equal(route.request().url(), endpoint + '/disconnect')
   assert.equal(route.request().method(), 'POST')
   disconnectCalls++
@@ -541,7 +541,7 @@ try {
  assert.equal(await modal.getByRole('button', { name: 'Desconectar', exact: true }).isDisabled(), true)
  await modal.getByRole('button', { name: 'Excluir', exact: true }).click()
  await modal.waitFor({ state: 'detached' })
- assert.equal((await page.request.get(base + '/api/v1/instances').then((r) => r.json())).data.length, 0)
+ assert.equal((await page.request.get(base + '/api/instances').then((r) => r.json())).data.length, 0)
  assert.deepEqual(errors, [], 'browser console errors')
  console.log('PASS: metrics dashboard/API/ranges/responsive layout, team users/RBAC/session revocation, modal, persistent token across reopen/reload, explicit rotation, legacy token warning, playground text/image/video/audio/document/sticker via unified media endpoint, integrated OpenAPI docs and code examples, inbox chats/contacts/reply, activity filters, queue retry/cancel and webhook retry, saved event filters, disabling, empty selection, disconnect action (simulated connection), delete, desktop/mobile layout, pairing loading/QR/confirmation, QR caching/rotation/retry, cancellation, timeout, reduced motion.')
 } finally {

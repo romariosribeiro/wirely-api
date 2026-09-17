@@ -30,7 +30,7 @@ export function UsersModal({ onClose }: { onClose: () => void }) {
 
   async function load() {
     try {
-      const response = await request<{ data: User[] }>('/api/v1/users')
+      const response = await request<{ data: User[] }>('/api/users')
       setUsers(response.data)
       setDrafts(Object.fromEntries(response.data.map((user) => [user.id, { role: user.role, enabled: user.enabled }])))
       setError('')
@@ -49,7 +49,7 @@ export function UsersModal({ onClose }: { onClose: () => void }) {
   async function create(event: FormEvent) {
     event.preventDefault(); setBusy('create'); setError(''); setNotice('')
     try {
-      await request('/api/v1/users', { method: 'POST', body: JSON.stringify({ username, password, role }) })
+      await request('/api/users', { method: 'POST', body: JSON.stringify({ username, password, role }) })
       setUsername(''); setPassword(''); setRole('operator'); setNotice('Usuário criado e pronto para acessar o painel.')
       await load()
     } catch (reason) {
@@ -66,7 +66,7 @@ export function UsersModal({ onClose }: { onClose: () => void }) {
     if (!draft) return
     setBusy(user.id); setError(''); setNotice('')
     try {
-      await request(`/api/v1/users/${user.id}`, { method: 'PATCH', body: JSON.stringify(draft) })
+      await request(`/api/users/${user.id}`, { method: 'PATCH', body: JSON.stringify(draft) })
       setNotice(`Permissões de ${user.username} atualizadas. As sessões anteriores foram encerradas.`)
       await load()
     } catch (reason) {
@@ -79,7 +79,7 @@ export function UsersModal({ onClose }: { onClose: () => void }) {
     if (!resetUser) return
     setBusy(`password:${resetUser.id}`); setError(''); setNotice('')
     try {
-      await request(`/api/v1/users/${resetUser.id}/password`, {
+      await request(`/api/users/${resetUser.id}/password`, {
         method: 'PUT', body: JSON.stringify({ password: resetPassword }),
       })
       setNotice(`Senha de ${resetUser.username} redefinida. As sessões anteriores foram encerradas.`)
@@ -93,7 +93,7 @@ export function UsersModal({ onClose }: { onClose: () => void }) {
     if (!window.confirm(`Excluir o acesso de ${user.username}? Esta ação encerra todas as sessões desse usuário.`)) return
     setBusy(`delete:${user.id}`); setError(''); setNotice('')
     try {
-      await request(`/api/v1/users/${user.id}`, { method: 'DELETE' })
+      await request(`/api/users/${user.id}`, { method: 'DELETE' })
       setNotice(`Usuário ${user.username} removido.`)
       await load()
     } catch (reason) {

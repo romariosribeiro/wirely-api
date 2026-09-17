@@ -23,7 +23,7 @@ func TestWebhookPreferencesAPI(t *testing.T) {
 		t.Fatal(err)
 	}
 	app := New(Dependencies{Store: store})
-	endpoint := "/api/v1/instances/" + instance.ID + "/webhook"
+	endpoint := "/api/instances/" + instance.ID + "/webhook"
 	send := func(method, body string, authenticated bool) *httptest.ResponseRecorder {
 		request := httptest.NewRequest(method, endpoint, strings.NewReader(body))
 		if authenticated {

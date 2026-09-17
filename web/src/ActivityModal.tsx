@@ -75,13 +75,13 @@ export function ActivityModal({ instance, canOperate, onClose }: { instance: Ins
     try {
       if (view === 'events') {
         query.set('category', filter)
-        setEvents(await request<Page<ActivityEvent>>(`/api/v1/instances/${instance.id}/events?${query}`, { signal }))
+        setEvents(await request<Page<ActivityEvent>>(`/api/instances/${instance.id}/events?${query}`, { signal }))
       } else if (view === 'webhooks') {
         query.set('status', filter)
-        setDeliveries(await request<Page<WebhookDelivery>>(`/api/v1/instances/${instance.id}/webhook-deliveries?${query}`, { signal }))
+        setDeliveries(await request<Page<WebhookDelivery>>(`/api/instances/${instance.id}/webhook-deliveries?${query}`, { signal }))
       } else {
         query.set('status', filter)
-        setJobs(await request<Page<MessageJob>>(`/api/v1/instances/${instance.id}/queue?${query}`, { signal }))
+        setJobs(await request<Page<MessageJob>>(`/api/instances/${instance.id}/queue?${query}`, { signal }))
       }
     } catch (reason) {
       if (!signal?.aborted) setError(reason instanceof Error ? reason.message : 'Falha ao carregar o histórico.')
@@ -109,7 +109,7 @@ export function ActivityModal({ instance, canOperate, onClose }: { instance: Ins
     if (!window.confirm('Reenviar este evento para o webhook configurado atualmente?')) return
     setRetrying(item.id); setError(''); setNotice('')
     try {
-      await request(`/api/v1/instances/${instance.id}/webhook-deliveries/${item.id}/retry`, { method: 'POST' })
+      await request(`/api/instances/${instance.id}/webhook-deliveries/${item.id}/retry`, { method: 'POST' })
       setNotice('Webhook entregue com sucesso. A nova tentativa foi adicionada ao histórico.')
       await load(true)
     } catch (reason) {
@@ -123,7 +123,7 @@ export function ActivityModal({ instance, canOperate, onClose }: { instance: Ins
     if (!window.confirm(question)) return
     setBusyJob(item.id); setError(''); setNotice('')
     try {
-      await request(`/api/v1/instances/${instance.id}/queue/${item.id}${action === 'retry' ? '/retry' : ''}`, {
+      await request(`/api/instances/${instance.id}/queue/${item.id}${action === 'retry' ? '/retry' : ''}`, {
         method: action === 'retry' ? 'POST' : 'DELETE',
       })
       setNotice(action === 'retry' ? 'Envio recolocado na fila.' : 'Envio cancelado com segurança.')

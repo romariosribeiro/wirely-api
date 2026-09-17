@@ -65,7 +65,7 @@ export function TesterModal({ instance, onClose, onManage }: {
 
   useEffect(() => {
     const controller = new AbortController()
-    request<{ token: string }>(`/api/v1/instances/${instance.id}/token`, { signal: controller.signal })
+    request<{ token: string }>(`/api/instances/${instance.id}/token`, { signal: controller.signal })
       .then((value) => setToken(value.token))
       .catch((reason) => setError(reason instanceof Error ? reason.message : 'Falha ao carregar token.'))
       .finally(() => { if (!controller.signal.aborted) setLoadingToken(false) })

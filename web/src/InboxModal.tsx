@@ -66,8 +66,8 @@ export function InboxModal({ instance, canSend, onClose }: { instance: Instance;
     const query = new URLSearchParams({ page: '1', pageSize: '100' })
     if (search.trim()) query.set('search', search.trim())
     try {
-      if (view === 'chats') setChats(await request<Page<ChatSummary>>(`/api/v1/instances/${instance.id}/chats?${query}`, { signal }))
-      else setContacts(await request<Page<Contact>>(`/api/v1/instances/${instance.id}/contacts?${query}`, { signal }))
+      if (view === 'chats') setChats(await request<Page<ChatSummary>>(`/api/instances/${instance.id}/chats?${query}`, { signal }))
+      else setContacts(await request<Page<Contact>>(`/api/instances/${instance.id}/contacts?${query}`, { signal }))
       if (!signal?.aborted) setError('')
     } catch (reason) {
       if (!signal?.aborted) setError(reason instanceof Error ? reason.message : 'Falha ao carregar conversas.')
@@ -87,7 +87,7 @@ export function InboxModal({ instance, canSend, onClose }: { instance: Instance;
     }
     try {
       const encoded = encodeURIComponent(selection.chat)
-      const result = await request<Page<ChatMessage>>(`/api/v1/instances/${instance.id}/chats/${encoded}/messages?page=${page}&pageSize=50`, { signal })
+      const result = await request<Page<ChatMessage>>(`/api/instances/${instance.id}/chats/${encoded}/messages?page=${page}&pageSize=50`, { signal })
       if (signal?.aborted) return
       const incoming = [...result.data].reverse()
       setMessages((current) => {
@@ -102,7 +102,7 @@ export function InboxModal({ instance, canSend, onClose }: { instance: Instance;
       })
       if (!refresh) setMessagePage(result.page)
       setMessagePages(Math.max(result.totalPages, 1)); setError('')
-      await request(`/api/v1/instances/${instance.id}/chats/${encoded}/read`, { method: 'POST', signal })
+      await request(`/api/instances/${instance.id}/chats/${encoded}/read`, { method: 'POST', signal })
       if (!signal?.aborted) void loadList(true, signal)
     } catch (reason) {
       if (!signal?.aborted) setError(reason instanceof Error ? reason.message : 'Falha ao carregar mensagens.')
@@ -134,7 +134,7 @@ export function InboxModal({ instance, canSend, onClose }: { instance: Instance;
     const text = draft.trim()
     try {
       const encoded = encodeURIComponent(selected.chat)
-      await request(`/api/v1/instances/${instance.id}/chats/${encoded}/messages`, {
+      await request(`/api/instances/${instance.id}/chats/${encoded}/messages`, {
         method: 'POST', body: JSON.stringify({ message: text }),
       })
       setDraft('')

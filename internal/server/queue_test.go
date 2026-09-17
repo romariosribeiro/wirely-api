@@ -130,7 +130,7 @@ func TestPublicQueueMediaAndAdminQueueActions(t *testing.T) {
 	}
 
 	cookie := authenticatedCookie(t, store, app.Handler())
-	list := httptest.NewRequest(http.MethodGet, "/api/v1/instances/"+instance.ID+"/queue?status=queued", nil)
+	list := httptest.NewRequest(http.MethodGet, "/api/instances/"+instance.ID+"/queue?status=queued", nil)
 	list.AddCookie(cookie)
 	listResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(listResponse, list)
@@ -138,7 +138,7 @@ func TestPublicQueueMediaAndAdminQueueActions(t *testing.T) {
 		t.Fatalf("admin queue list failed: %d %s", listResponse.Code, listResponse.Body.String())
 	}
 
-	cancel := httptest.NewRequest(http.MethodDelete, "/api/v1/instances/"+instance.ID+"/queue/"+job.ID, nil)
+	cancel := httptest.NewRequest(http.MethodDelete, "/api/instances/"+instance.ID+"/queue/"+job.ID, nil)
 	cancel.AddCookie(cookie)
 	cancelResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(cancelResponse, cancel)
@@ -171,7 +171,7 @@ func TestAdminCanRetryFailedJob(t *testing.T) {
 	}
 	app := New(Dependencies{Store: store, Queue: queue})
 	cookie := authenticatedCookie(t, store, app.Handler())
-	retry := httptest.NewRequest(http.MethodPost, "/api/v1/instances/"+instance.ID+"/queue/"+job.ID+"/retry", nil)
+	retry := httptest.NewRequest(http.MethodPost, "/api/instances/"+instance.ID+"/queue/"+job.ID+"/retry", nil)
 	retry.AddCookie(cookie)
 	retryResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(retryResponse, retry)
@@ -182,7 +182,7 @@ func TestAdminCanRetryFailedJob(t *testing.T) {
 
 func TestQueueRoutesRequireBearerOrAdminSession(t *testing.T) {
 	store := testStore(t)
-	for _, target := range []string{"/api/queue/text", "/api/queue/media", "/api/queue/job_example", "/api/v1/instances/example/queue"} {
+	for _, target := range []string{"/api/queue/text", "/api/queue/media", "/api/queue/job_example", "/api/instances/example/queue"} {
 		method := http.MethodGet
 		if target == "/api/queue/text" || target == "/api/queue/media" {
 			method = http.MethodPost

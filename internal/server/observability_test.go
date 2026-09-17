@@ -23,7 +23,7 @@ func TestPrometheusEndpointAndAlerts(t *testing.T) {
 	app := New(Dependencies{Store: store})
 
 	health := httptest.NewRecorder()
-	app.Handler().ServeHTTP(health, httptest.NewRequest(http.MethodGet, "/api/v1/health", nil))
+	app.Handler().ServeHTTP(health, httptest.NewRequest(http.MethodGet, "/api/health", nil))
 	metrics := httptest.NewRecorder()
 	app.Handler().ServeHTTP(metrics, httptest.NewRequest(http.MethodGet, "/metrics", nil))
 	if metrics.Code != http.StatusOK || !strings.HasPrefix(metrics.Header().Get("Content-Type"), "text/plain") {
@@ -36,12 +36,12 @@ func TestPrometheusEndpointAndAlerts(t *testing.T) {
 	}
 
 	unauthenticated := httptest.NewRecorder()
-	app.Handler().ServeHTTP(unauthenticated, httptest.NewRequest(http.MethodGet, "/api/v1/alerts", nil))
+	app.Handler().ServeHTTP(unauthenticated, httptest.NewRequest(http.MethodGet, "/api/alerts", nil))
 	if unauthenticated.Code != http.StatusUnauthorized {
 		t.Fatalf("alerts did not require a session: %d", unauthenticated.Code)
 	}
 	cookie := loginUser(t, app.Handler(), viewer.Username, "alerts-viewer-password")
-	request := httptest.NewRequest(http.MethodGet, "/api/v1/alerts", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/alerts", nil)
 	request.AddCookie(cookie)
 	response := httptest.NewRecorder()
 	app.Handler().ServeHTTP(response, request)

@@ -75,7 +75,7 @@ export function PairingModal({ instance, connection, hasShownQR, starting, onClo
         </div> : failed ? <div className="connectionError" role="alert">
           <span className="errorMark" aria-hidden="true">!</span><h3>{connection?.status === 'error' ? 'Não foi possível conectar' : 'Pareamento encerrado'}</h3>
           <p>{connection?.lastError || 'Feche esta janela e clique em Conectar para tentar novamente.'}</p>
-        </div> : connection?.qrAvailable ? <QRCode key={version} source={`/api/v1/instances/${instance.id}/qr?v=${encodeURIComponent(version)}`} />
+        </div> : connection?.qrAvailable ? <QRCode key={version} source={`/api/instances/${instance.id}/qr?v=${encodeURIComponent(version)}`} />
           : <LoadingState title={hasShownQR && connection?.status === 'connecting' ? 'Finalizando conexão' : 'Preparando conexão'}
             description={hasShownQR && connection?.status === 'connecting' ? 'Validando sua sessão com o WhatsApp. Só mais um instante.' : 'Estamos preparando seu QR Code. Ele aparecerá automaticamente.'} />}
       </div>

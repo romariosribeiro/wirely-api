@@ -43,7 +43,7 @@ func TestUserManagementAndRoleAuthorization(t *testing.T) {
 	app := New(Dependencies{Store: store})
 	ownerCookie := loginUser(t, app.Handler(), "admin", ownerPassword)
 
-	createOperator := requestWithCookie(app.Handler(), http.MethodPost, "/api/v1/users",
+	createOperator := requestWithCookie(app.Handler(), http.MethodPost, "/api/users",
 		`{"username":"operator.one","password":"operator-password-123","role":"operator"}`, ownerCookie)
 	if createOperator.Code != http.StatusCreated {
 		t.Fatalf("operator creation failed: %d %s", createOperator.Code, createOperator.Body.String())
@@ -53,21 +53,21 @@ func TestUserManagementAndRoleAuthorization(t *testing.T) {
 		t.Fatal(err)
 	}
 	operatorCookie := loginUser(t, app.Handler(), operator.Username, "operator-password-123")
-	me := requestWithCookie(app.Handler(), http.MethodGet, "/api/v1/auth/me", "", operatorCookie)
+	me := requestWithCookie(app.Handler(), http.MethodGet, "/api/auth/me", "", operatorCookie)
 	if me.Code != http.StatusOK || !strings.Contains(me.Body.String(), `"role":"operator"`) {
 		t.Fatalf("operator principal missing: %d %s", me.Code, me.Body.String())
 	}
-	if response := requestWithCookie(app.Handler(), http.MethodGet, "/api/v1/instances", "", operatorCookie); response.Code != http.StatusOK {
+	if response := requestWithCookie(app.Handler(), http.MethodGet, "/api/instances", "", operatorCookie); response.Code != http.StatusOK {
 		t.Fatalf("operator cannot read instances: %d", response.Code)
 	}
-	if response := requestWithCookie(app.Handler(), http.MethodPost, "/api/v1/instances", `{"name":"Denied"}`, operatorCookie); response.Code != http.StatusForbidden {
+	if response := requestWithCookie(app.Handler(), http.MethodPost, "/api/instances", `{"name":"Denied"}`, operatorCookie); response.Code != http.StatusForbidden {
 		t.Fatalf("operator created an instance: %d %s", response.Code, response.Body.String())
 	}
-	if response := requestWithCookie(app.Handler(), http.MethodGet, "/api/v1/users", "", operatorCookie); response.Code != http.StatusForbidden {
+	if response := requestWithCookie(app.Handler(), http.MethodGet, "/api/users", "", operatorCookie); response.Code != http.StatusForbidden {
 		t.Fatalf("operator listed users: %d", response.Code)
 	}
 
-	createViewer := requestWithCookie(app.Handler(), http.MethodPost, "/api/v1/users",
+	createViewer := requestWithCookie(app.Handler(), http.MethodPost, "/api/users",
 		`{"username":"viewer.one","password":"viewer-password-123","role":"viewer"}`, ownerCookie)
 	if createViewer.Code != http.StatusCreated {
 		t.Fatalf("viewer creation failed: %d %s", createViewer.Code, createViewer.Body.String())
@@ -75,30 +75,30 @@ func TestUserManagementAndRoleAuthorization(t *testing.T) {
 	var viewer storage.User
 	_ = json.Unmarshal(createViewer.Body.Bytes(), &viewer)
 	viewerCookie := loginUser(t, app.Handler(), viewer.Username, "viewer-password-123")
-	if response := requestWithCookie(app.Handler(), http.MethodPost, "/api/v1/instances/example/connect", "", viewerCookie); response.Code != http.StatusForbidden {
+	if response := requestWithCookie(app.Handler(), http.MethodPost, "/api/instances/example/connect", "", viewerCookie); response.Code != http.StatusForbidden {
 		t.Fatalf("viewer connected an instance: %d", response.Code)
 	}
 
-	update := requestWithCookie(app.Handler(), http.MethodPatch, "/api/v1/users/"+operator.ID,
+	update := requestWithCookie(app.Handler(), http.MethodPatch, "/api/users/"+operator.ID,
 		`{"role":"viewer","enabled":true}`, ownerCookie)
 	if update.Code != http.StatusOK || !strings.Contains(update.Body.String(), `"role":"viewer"`) {
 		t.Fatalf("operator role update failed: %d %s", update.Code, update.Body.String())
 	}
-	if response := requestWithCookie(app.Handler(), http.MethodGet, "/api/v1/auth/me", "", operatorCookie); response.Code != http.StatusUnauthorized {
+	if response := requestWithCookie(app.Handler(), http.MethodGet, "/api/auth/me", "", operatorCookie); response.Code != http.StatusUnauthorized {
 		t.Fatalf("role change did not revoke session: %d", response.Code)
 	}
 
-	reset := requestWithCookie(app.Handler(), http.MethodPut, "/api/v1/users/"+viewer.ID+"/password",
+	reset := requestWithCookie(app.Handler(), http.MethodPut, "/api/users/"+viewer.ID+"/password",
 		`{"password":"viewer-reset-password-456"}`, ownerCookie)
 	if reset.Code != http.StatusNoContent {
 		t.Fatalf("password reset failed: %d %s", reset.Code, reset.Body.String())
 	}
-	if response := requestWithCookie(app.Handler(), http.MethodGet, "/api/v1/auth/me", "", viewerCookie); response.Code != http.StatusUnauthorized {
+	if response := requestWithCookie(app.Handler(), http.MethodGet, "/api/auth/me", "", viewerCookie); response.Code != http.StatusUnauthorized {
 		t.Fatalf("password reset did not revoke session: %d", response.Code)
 	}
 	_ = loginUser(t, app.Handler(), viewer.Username, "viewer-reset-password-456")
 
-	users := requestWithCookie(app.Handler(), http.MethodGet, "/api/v1/users", "", ownerCookie)
+	users := requestWithCookie(app.Handler(), http.MethodGet, "/api/users", "", ownerCookie)
 	if users.Code != http.StatusOK || !strings.Contains(users.Body.String(), `"username":"admin"`) {
 		t.Fatalf("owner cannot list team: %d %s", users.Code, users.Body.String())
 	}
@@ -115,7 +115,7 @@ func TestUserManagementAndRoleAuthorization(t *testing.T) {
 	if ownerID == "" {
 		t.Fatal("owner missing from user list")
 	}
-	if response := requestWithCookie(app.Handler(), http.MethodDelete, "/api/v1/users/"+ownerID, "", ownerCookie); response.Code != http.StatusConflict {
+	if response := requestWithCookie(app.Handler(), http.MethodDelete, "/api/users/"+ownerID, "", ownerCookie); response.Code != http.StatusConflict {
 		t.Fatalf("owner deletion was accepted: %d", response.Code)
 	}
 }

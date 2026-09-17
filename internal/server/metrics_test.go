@@ -36,7 +36,7 @@ func TestMetricsAPIReportsOperationalSnapshot(t *testing.T) {
 
 	app := New(Dependencies{Store: store})
 	cookie := loginUser(t, app.Handler(), viewer.Username, "metrics-viewer-password")
-	request := httptest.NewRequest(http.MethodGet, "/api/v1/metrics?range=24h", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/metrics?range=24h", nil)
 	request.AddCookie(cookie)
 	response := httptest.NewRecorder()
 	app.Handler().ServeHTTP(response, request)
@@ -63,13 +63,13 @@ func TestMetricsAPIValidatesRangeAndAuthentication(t *testing.T) {
 	app := New(Dependencies{Store: store})
 
 	unauthenticated := httptest.NewRecorder()
-	app.Handler().ServeHTTP(unauthenticated, httptest.NewRequest(http.MethodGet, "/api/v1/metrics", nil))
+	app.Handler().ServeHTTP(unauthenticated, httptest.NewRequest(http.MethodGet, "/api/metrics", nil))
 	if unauthenticated.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401, got %d", unauthenticated.Code)
 	}
 
 	cookie := authenticatedCookie(t, store, app.Handler())
-	invalid := httptest.NewRequest(http.MethodGet, "/api/v1/metrics?range=1y", nil)
+	invalid := httptest.NewRequest(http.MethodGet, "/api/metrics?range=1y", nil)
 	invalid.AddCookie(cookie)
 	response := httptest.NewRecorder()
 	app.Handler().ServeHTTP(response, invalid)

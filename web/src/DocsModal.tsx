@@ -23,9 +23,9 @@ type InstanceEndpointInfo = {
 
 const instanceEndpoints: InstanceEndpointInfo[] = [
   { id: 'login', method: 'POST', path: '/api/auth/login', title: 'Login administrativo', description: 'Autentica o administrador e salva a sessão usada nas rotas globais.', body: '{"username":"admin","password":"SUA_SENHA"}' },
-  { id: 'all', method: 'GET', path: '/api/v1/instances', title: 'Listar instâncias', description: 'Lista todas as instâncias sem expor seus tokens.', admin: true },
-  { id: 'create', method: 'POST', path: '/api/v1/instances', title: 'Criar instância', description: 'Cria a instância e retorna seu primeiro token.', admin: true, body: '{"name":"Atendimento"}' },
-  { id: 'delete', method: 'DELETE', path: '/api/v1/instances/{id}', title: 'Excluir instância', description: 'Exclui definitivamente sessão, filas, histórico e mídias.', admin: true },
+  { id: 'all', method: 'GET', path: '/api/instances', title: 'Listar instâncias', description: 'Lista todas as instâncias sem expor seus tokens.', admin: true },
+  { id: 'create', method: 'POST', path: '/api/instances', title: 'Criar instância', description: 'Cria a instância e retorna seu primeiro token.', admin: true, body: '{"name":"Atendimento"}' },
+  { id: 'delete', method: 'DELETE', path: '/api/instances/{id}', title: 'Excluir instância', description: 'Exclui definitivamente sessão, filas, histórico e mídias.', admin: true },
   { id: 'details', method: 'GET', path: '/api/instance', title: 'Consultar instância', description: 'Retorna apenas a instância identificada pelo Bearer.' },
   { id: 'connect', method: 'POST', path: '/api/instance/connect', title: 'Conectar', description: 'Inicia a conexão e a geração do QR Code quando necessário.' },
   { id: 'disconnect', method: 'POST', path: '/api/instance/disconnect', title: 'Desconectar', description: 'Desconecta sem remover o pareamento existente.' },
@@ -901,7 +901,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
   useEffect(() => {
     if (!instanceID || !canManage) return
     const controller = new AbortController()
-    request<{ token: string }>(`/api/v1/instances/${instanceID}/token`, { signal: controller.signal })
+    request<{ token: string }>(`/api/instances/${instanceID}/token`, { signal: controller.signal })
       .then((value) => setToken(value.token))
       .catch((reason) => setTokenError(reason instanceof Error ? reason.message : 'Falha ao carregar token.'))
       .finally(() => { if (!controller.signal.aborted) setLoadingToken(false) })

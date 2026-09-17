@@ -55,12 +55,12 @@ export function OperationsModal({ user, onClose }: { user: User; onClose: () => 
     setLoading(true); setError('')
     try {
       if (view === 'alerts') {
-        const response = await request<{ data: Alert[] }>('/api/v1/alerts')
+        const response = await request<{ data: Alert[] }>('/api/alerts')
         setAlerts(response.data)
       } else if (view === 'backups') {
-        setBackups(await request<BackupStatus>('/api/v1/backups'))
+        setBackups(await request<BackupStatus>('/api/backups'))
       } else {
-        setAudit(await request<Page<AuditEntry>>('/api/v1/audit?page=1&pageSize=50'))
+        setAudit(await request<Page<AuditEntry>>('/api/audit?page=1&pageSize=50'))
       }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Não foi possível carregar as operações.')
@@ -75,7 +75,7 @@ export function OperationsModal({ user, onClose }: { user: User; onClose: () => 
   async function createBackup() {
     setBusy('create'); setError(''); setNotice('')
     try {
-      await request('/api/v1/backups', { method: 'POST' })
+      await request('/api/backups', { method: 'POST' })
       setNotice('Backup criado e validado com sucesso.')
       await load()
     } catch (reason) {
@@ -87,7 +87,7 @@ export function OperationsModal({ user, onClose }: { user: User; onClose: () => 
     if (!window.confirm('Restaurar este backup? O Wirely criará um backup de segurança e reiniciará automaticamente.')) return
     setBusy(`restore:${id}`); setError(''); setNotice('')
     try {
-      await request(`/api/v1/backups/${id}/restore`, { method: 'POST' })
+      await request(`/api/backups/${id}/restore`, { method: 'POST' })
       setNotice('Restauração preparada. O Wirely está reiniciando; recarregue a página em alguns segundos.')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Não foi possível preparar a restauração.')
@@ -99,7 +99,7 @@ export function OperationsModal({ user, onClose }: { user: User; onClose: () => 
     if (!window.confirm('Excluir este arquivo de backup?')) return
     setBusy(`delete:${id}`); setError(''); setNotice('')
     try {
-      await request(`/api/v1/backups/${id}`, { method: 'DELETE' })
+      await request(`/api/backups/${id}`, { method: 'DELETE' })
       setNotice('Backup excluído.')
       await load()
     } catch (reason) {
@@ -142,7 +142,7 @@ export function OperationsModal({ user, onClose }: { user: User; onClose: () => 
             {backups.data.length === 0 ? <div className="operationsEmpty"><strong>Nenhum backup disponível</strong><p>Crie o primeiro ponto de restauração.</p></div> :
               <div className="backupList">{backups.data.map((item) => <article key={item.id}>
                 <div><strong>{dateTime(item.createdAt)}</strong><small>{reasonLabels[item.reason] ?? item.reason} · {fileSize(item.size)}</small></div>
-                <div><a className="secondaryButton" href={`/api/v1/backups/${item.id}/download`}>Baixar</a>
+                <div><a className="secondaryButton" href={`/api/backups/${item.id}/download`}>Baixar</a>
                   <button className="secondaryButton" type="button" disabled={Boolean(busy)} onClick={() => void restoreBackup(item.id)}>
                     {busy === `restore:${item.id}` ? 'Reiniciando…' : 'Restaurar'}</button>
                   <button className="dangerButton" type="button" disabled={Boolean(busy)} onClick={() => void deleteBackup(item.id)}>
