@@ -5,6 +5,20 @@ written in Go and the panel uses React, TypeScript, and Vite.
 
 > The project is in its initial development phase and is not ready for production.
 
+## Screenshots
+
+### Dashboard
+
+![Wirely API dashboard](docs/images/wirely-dashboard.png)
+
+### API documentation
+
+![Wirely API documentation](docs/images/wirely-documentation.png)
+
+### Login
+
+![Wirely API login](docs/images/wirely-login.png)
+
 ## Current features
 
 - Single Go binary with the React panel embedded
