@@ -190,11 +190,13 @@ dialog[open] { animation: modalIn .2s ease-out; }
 .manageSave .textButton { font-size: 10px; }
 .manageBehaviorGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0 16px; }
 .manageBehavior { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 12px; border: 1px solid #272e3b; border-radius: 8px; background: #0d1016; cursor: pointer; }
+.manageBehavior:last-child { grid-column: 1 / -1; }
 .manageBehavior:has(input:checked) { border-color: #a5baff35; background: #a5baff05; }
 .manageBehavior > span:first-child { min-width: 0; }
 .manageBehavior strong { display: block; font-size: 11px; font-weight: 550; }
 .manageBehavior small { margin-top: 3px; }
 .manageBehavior .manageSwitch { flex-direction: column; align-items: flex-end; gap: 4px; }
+.manageBehavior .manageSwitch input { flex-basis: 18px; }
 .manageBehavior .manageSwitch > span { font-size: 9px; color: var(--muted); }
 .manageRejectMessage { width: 100%; resize: vertical; min-height: 72px; font: inherit; font-size: 12px; }
 .manageFeedback { margin: 16px 0 0; padding: 10px 12px; border: 1px solid currentColor; border-radius: 7px; font-size: 11px; }
