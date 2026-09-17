@@ -40,7 +40,7 @@ jobs:
           cp -R deploy dist/
           tar -C dist -czf wirely-${GITHUB_REF_NAME}-linux-${GOARCH}.tar.gz wirely install.sh LICENSE README.md deploy
           sha256sum wirely-${GITHUB_REF_NAME}-linux-${GOARCH}.tar.gz > wirely-${GITHUB_REF_NAME}-linux-${GOARCH}.tar.gz.sha256
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: wirely-linux-${{ matrix.arch }}
           path: |
