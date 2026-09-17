@@ -6,14 +6,14 @@ type JSONEndpoint = 'text' | 'location' | 'contact' | 'poll' | 'reaction'
 type Endpoint = JSONEndpoint | MediaEndpoint
 type GroupEndpoint = 'list' | 'create' | 'join' | 'details' | 'rename' | 'participants' | 'invite' | 'rotate-invite'
 type ProfileEndpoint = 'get-profile' | 'update-profile' | 'set-photo' | 'delete-photo' | 'get-privacy' | 'update-privacy'
-type InstanceEndpoint = 'login' | 'all' | 'create' | 'delete' | 'details' | 'connect' | 'disconnect' | 'logout' | 'pair' | 'proxy' | 'qr' | 'status' | 'check'
+type InstanceEndpoint = 'login' | 'all' | 'create' | 'settings' | 'delete' | 'details' | 'connect' | 'disconnect' | 'logout' | 'pair' | 'proxy' | 'qr' | 'status' | 'check'
 type MessageActionEndpoint = 'delete-message' | 'edit-message' | 'mark-read' | 'message-status' | 'archive-chat' | 'mute-chat' | 'pin-chat' | 'unpin-chat'
 type OrganizationEndpoint = 'create-newsletter' | 'get-newsletter' | 'invite-newsletter' | 'list-newsletters' | 'newsletter-messages' | 'subscribe-newsletter' | 'add-chat-label' | 'edit-label' | 'add-message-label' | 'remove-chat-label' | 'remove-message-label' | 'add-community-groups' | 'create-community' | 'remove-community-groups'
 type Language = 'curl' | 'laravel' | 'node' | 'python'
 
 type InstanceEndpointInfo = {
   id: InstanceEndpoint
-  method: 'GET' | 'POST' | 'DELETE'
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE'
   path: string
   title: string
   description: string
@@ -24,7 +24,8 @@ type InstanceEndpointInfo = {
 const instanceEndpoints: InstanceEndpointInfo[] = [
   { id: 'login', method: 'POST', path: '/api/auth/login', title: 'Login administrativo', description: 'Autentica o administrador e salva a sessão usada nas rotas globais.', body: '{"username":"admin","password":"SUA_SENHA"}' },
   { id: 'all', method: 'GET', path: '/api/instances', title: 'Listar instâncias', description: 'Lista todas as instâncias sem expor seus tokens.', admin: true },
-  { id: 'create', method: 'POST', path: '/api/instances', title: 'Criar instância', description: 'Cria a instância e retorna seu primeiro token.', admin: true, body: '{"name":"Atendimento"}' },
+  { id: 'create', method: 'POST', path: '/api/instances', title: 'Criar instância', description: 'Cria a instância, define seu comportamento e retorna o primeiro token.', admin: true, body: '{"name":"Atendimento","alwaysOnline":false,"rejectCall":false,"msgRejectCall":"","readMessages":false,"ignoreGroups":false,"ignoreStatus":false}' },
+  { id: 'settings', method: 'PUT', path: '/api/instances/{id}/settings', title: 'Configurar comportamento', description: 'Liga ou desliga presença contínua, rejeição de chamadas, leitura automática e filtros.', admin: true, body: '{"alwaysOnline":false,"rejectCall":false,"msgRejectCall":"","readMessages":false,"ignoreGroups":false,"ignoreStatus":false}' },
   { id: 'delete', method: 'DELETE', path: '/api/instances/{id}', title: 'Excluir instância', description: 'Exclui definitivamente sessão, filas, histórico e mídias.', admin: true },
   { id: 'details', method: 'GET', path: '/api/instance', title: 'Consultar instância', description: 'Retorna apenas a instância identificada pelo Bearer.' },
   { id: 'connect', method: 'POST', path: '/api/instance/connect', title: 'Conectar', description: 'Inicia a conexão e permite configurar o webhook único e as assinaturas no mesmo pedido.', body: '{"subscribe":["MESSAGE","SEND_MESSAGE","READ_RECEIPT","PRESENCE","HISTORY_SYNC","CHAT_PRESENCE","CALL","CONNECTION","LABEL","CONTACT","GROUP","NEWSLETTER","QRCODE"],"webhookUrl":"https://seu-dominio.com/webhook"}' },

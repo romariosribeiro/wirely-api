@@ -82,13 +82,33 @@ func TestCreateAndListInstances(t *testing.T) {
 		t.Fatal("expected session cookie")
 	}
 
-	createBody, _ := json.Marshal(map[string]string{"name": "Principal"})
+	createBody, _ := json.Marshal(map[string]any{
+		"name": "Principal", "alwaysOnline": true, "rejectCall": true,
+		"msgRejectCall": "Envie uma mensagem", "readMessages": true,
+		"ignoreGroups": true, "ignoreStatus": false,
+	})
 	create := httptest.NewRequest(http.MethodPost, "/api/instances", bytes.NewReader(createBody))
 	create.AddCookie(cookies[0])
 	createResponse := httptest.NewRecorder()
 	app.Handler().ServeHTTP(createResponse, create)
 	if createResponse.Code != http.StatusCreated {
 		t.Fatalf("create failed with status %d: %s", createResponse.Code, createResponse.Body.String())
+	}
+	var created storage.Instance
+	if err := json.Unmarshal(createResponse.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if !created.AlwaysOnline || !created.RejectCall || !created.ReadMessages || !created.IgnoreGroups {
+		t.Fatalf("create did not preserve instance settings: %#v", created.InstanceSettings)
+	}
+
+	settingsBody := strings.NewReader(`{"alwaysOnline":false,"rejectCall":true,"msgRejectCall":"Não atendemos chamadas","readMessages":false,"ignoreGroups":false,"ignoreStatus":true}`)
+	update := httptest.NewRequest(http.MethodPut, "/api/instances/"+created.ID+"/settings", settingsBody)
+	update.AddCookie(cookies[0])
+	updateResponse := httptest.NewRecorder()
+	app.Handler().ServeHTTP(updateResponse, update)
+	if updateResponse.Code != http.StatusOK || !strings.Contains(updateResponse.Body.String(), `"ignoreStatus":true`) {
+		t.Fatalf("settings update failed: %d %s", updateResponse.Code, updateResponse.Body.String())
 	}
 
 	list := httptest.NewRequest(http.MethodGet, "/api/instances", nil)

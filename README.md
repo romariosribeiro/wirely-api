@@ -436,6 +436,11 @@ curl -X POST 'http://localhost:8080/api/auth/login' \
 
 curl 'http://localhost:8080/api/instances' \
   -b wirely.cookies
+
+curl -X POST 'http://localhost:8080/api/instances' \
+  -H 'Content-Type: application/json' \
+  -b wirely.cookies \
+  -d '{"name":"Atendimento","alwaysOnline":false,"rejectCall":false,"msgRejectCall":"","readMessages":false,"ignoreGroups":false,"ignoreStatus":false}'
 ```
 
 The password is sent only to `POST /api/auth/login`. Subsequent administrative
@@ -445,6 +450,8 @@ requests reuse the HttpOnly session cookie.
 | --- | --- | --- |
 | `GET` | `/api/instances` | List every instance |
 | `POST` | `/api/instances` | Create an instance and its first token |
+| `GET` | `/api/instances/{id}/settings` | Read instance behavior settings |
+| `PUT` | `/api/instances/{id}/settings` | Update online, call, read, group, and Status behavior |
 | `DELETE` | `/api/instances/{id}` | Permanently delete an instance |
 
 All remaining operations use the instance Bearer token, which means an

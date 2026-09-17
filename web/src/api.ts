@@ -23,7 +23,16 @@ export type Instance = {
   status: string
   createdAt: string
   apiToken?: string
+  alwaysOnline: boolean
+  rejectCall: boolean
+  msgRejectCall: string
+  readMessages: boolean
+  ignoreGroups: boolean
+  ignoreStatus: boolean
 }
+
+export type InstanceSettings = Pick<Instance,
+  'alwaysOnline' | 'rejectCall' | 'msgRejectCall' | 'readMessages' | 'ignoreGroups' | 'ignoreStatus'>
 
 export type ConnectionState = {
   status: string

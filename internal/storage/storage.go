@@ -38,6 +38,16 @@ type Instance struct {
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 	APIToken  string    `json:"apiToken,omitempty"`
+	InstanceSettings
+}
+
+type InstanceSettings struct {
+	AlwaysOnline  bool   `json:"alwaysOnline"`
+	RejectCall    bool   `json:"rejectCall"`
+	MsgRejectCall string `json:"msgRejectCall"`
+	ReadMessages  bool   `json:"readMessages"`
+	IgnoreGroups  bool   `json:"ignoreGroups"`
+	IgnoreStatus  bool   `json:"ignoreStatus"`
 }
 
 type WebhookConfig struct {
@@ -287,6 +297,12 @@ WHERE event LIKE 'message.%'
 		"ALTER TABLE instances ADD COLUMN webhook_secret TEXT NOT NULL DEFAULT ''",
 		"ALTER TABLE instances ADD COLUMN webhook_enabled INTEGER NOT NULL DEFAULT 1",
 		`ALTER TABLE instances ADD COLUMN webhook_events TEXT NOT NULL DEFAULT '["messages","connection"]'`,
+		"ALTER TABLE instances ADD COLUMN always_online INTEGER NOT NULL DEFAULT 0",
+		"ALTER TABLE instances ADD COLUMN reject_call INTEGER NOT NULL DEFAULT 0",
+		"ALTER TABLE instances ADD COLUMN msg_reject_call TEXT NOT NULL DEFAULT ''",
+		"ALTER TABLE instances ADD COLUMN read_messages INTEGER NOT NULL DEFAULT 0",
+		"ALTER TABLE instances ADD COLUMN ignore_groups INTEGER NOT NULL DEFAULT 0",
+		"ALTER TABLE instances ADD COLUMN ignore_status INTEGER NOT NULL DEFAULT 0",
 	} {
 		if _, err := s.db.ExecContext(ctx, migration); err != nil &&
 			!strings.Contains(strings.ToLower(err.Error()), "duplicate column name") {
@@ -346,7 +362,8 @@ func (s *Store) PruneSessions(ctx context.Context) error {
 
 func (s *Store) ListInstances(ctx context.Context) ([]Instance, error) {
 	rows, err := s.db.QueryContext(ctx, `
-SELECT id, name, engine, status, created_at, updated_at
+SELECT id, name, engine, status, created_at, updated_at,
+       always_online, reject_call, msg_reject_call, read_messages, ignore_groups, ignore_status
 FROM instances ORDER BY created_at DESC`)
 	if err != nil {
 		return nil, fmt.Errorf("list instances: %w", err)
@@ -356,7 +373,9 @@ FROM instances ORDER BY created_at DESC`)
 	for rows.Next() {
 		var instance Instance
 		var createdAt, updatedAt int64
-		if err := rows.Scan(&instance.ID, &instance.Name, &instance.Engine, &instance.Status, &createdAt, &updatedAt); err != nil {
+		if err := rows.Scan(&instance.ID, &instance.Name, &instance.Engine, &instance.Status, &createdAt, &updatedAt,
+			&instance.AlwaysOnline, &instance.RejectCall, &instance.MsgRejectCall, &instance.ReadMessages,
+			&instance.IgnoreGroups, &instance.IgnoreStatus); err != nil {
 			return nil, fmt.Errorf("scan instance: %w", err)
 		}
 		instance.CreatedAt = time.Unix(createdAt, 0).UTC()
@@ -367,9 +386,17 @@ FROM instances ORDER BY created_at DESC`)
 }
 
 func (s *Store) CreateInstance(ctx context.Context, name string) (Instance, error) {
+	return s.CreateInstanceWithSettings(ctx, name, InstanceSettings{})
+}
+
+func (s *Store) CreateInstanceWithSettings(ctx context.Context, name string, settings InstanceSettings) (Instance, error) {
 	name = strings.TrimSpace(name)
 	if len(name) < 2 || len(name) > 60 {
 		return Instance{}, errors.New("instance name must contain between 2 and 60 characters")
+	}
+	settings.MsgRejectCall = strings.TrimSpace(settings.MsgRejectCall)
+	if len([]rune(settings.MsgRejectCall)) > 1000 {
+		return Instance{}, errors.New("msgRejectCall must have at most 1000 characters")
 	}
 	id, err := security.RandomToken(12)
 	if err != nil {
@@ -386,13 +413,15 @@ func (s *Store) CreateInstance(ctx context.Context, name string) (Instance, erro
 	now := time.Now().UTC()
 	instance := Instance{
 		ID: id, Name: name, Engine: "whatsmeow", Status: "disconnected",
-		CreatedAt: now, UpdatedAt: now, APIToken: token,
+		CreatedAt: now, UpdatedAt: now, APIToken: token, InstanceSettings: settings,
 	}
 	_, err = s.db.ExecContext(ctx, `
-INSERT INTO instances (id, name, engine, status, created_at, updated_at, api_token_hash, api_token_ciphertext)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+INSERT INTO instances (id, name, engine, status, created_at, updated_at, api_token_hash, api_token_ciphertext,
+                       always_online, reject_call, msg_reject_call, read_messages, ignore_groups, ignore_status)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		instance.ID, instance.Name, instance.Engine, instance.Status, now.Unix(), now.Unix(),
-		security.TokenHash(token), encrypted,
+		security.TokenHash(token), encrypted, settings.AlwaysOnline, settings.RejectCall,
+		settings.MsgRejectCall, settings.ReadMessages, settings.IgnoreGroups, settings.IgnoreStatus,
 	)
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "unique") {
@@ -419,9 +448,12 @@ func (s *Store) GetInstance(ctx context.Context, id string) (Instance, error) {
 	var instance Instance
 	var createdAt, updatedAt int64
 	err := s.db.QueryRowContext(ctx, `
-SELECT id, name, engine, status, created_at, updated_at
+SELECT id, name, engine, status, created_at, updated_at,
+       always_online, reject_call, msg_reject_call, read_messages, ignore_groups, ignore_status
 FROM instances WHERE id = ?`, id).Scan(
 		&instance.ID, &instance.Name, &instance.Engine, &instance.Status, &createdAt, &updatedAt,
+		&instance.AlwaysOnline, &instance.RejectCall, &instance.MsgRejectCall, &instance.ReadMessages,
+		&instance.IgnoreGroups, &instance.IgnoreStatus,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -432,6 +464,46 @@ FROM instances WHERE id = ?`, id).Scan(
 	instance.CreatedAt = time.Unix(createdAt, 0).UTC()
 	instance.UpdatedAt = time.Unix(updatedAt, 0).UTC()
 	return instance, nil
+}
+
+func (s *Store) GetInstanceSettings(ctx context.Context, id string) (InstanceSettings, error) {
+	var settings InstanceSettings
+	err := s.db.QueryRowContext(ctx, `
+SELECT always_online, reject_call, msg_reject_call, read_messages, ignore_groups, ignore_status
+FROM instances WHERE id = ?`, id).Scan(
+		&settings.AlwaysOnline, &settings.RejectCall, &settings.MsgRejectCall,
+		&settings.ReadMessages, &settings.IgnoreGroups, &settings.IgnoreStatus,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return InstanceSettings{}, ErrInstanceNotFound
+	}
+	if err != nil {
+		return InstanceSettings{}, fmt.Errorf("get instance settings: %w", err)
+	}
+	return settings, nil
+}
+
+func (s *Store) UpdateInstanceSettings(ctx context.Context, id string, settings InstanceSettings) error {
+	settings.MsgRejectCall = strings.TrimSpace(settings.MsgRejectCall)
+	if len([]rune(settings.MsgRejectCall)) > 1000 {
+		return errors.New("msgRejectCall must have at most 1000 characters")
+	}
+	result, err := s.db.ExecContext(ctx, `
+UPDATE instances SET always_online = ?, reject_call = ?, msg_reject_call = ?, read_messages = ?,
+                     ignore_groups = ?, ignore_status = ?, updated_at = ?
+WHERE id = ?`, settings.AlwaysOnline, settings.RejectCall, settings.MsgRejectCall, settings.ReadMessages,
+		settings.IgnoreGroups, settings.IgnoreStatus, time.Now().UTC().Unix(), id)
+	if err != nil {
+		return fmt.Errorf("update instance settings: %w", err)
+	}
+	count, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read instance settings update: %w", err)
+	}
+	if count == 0 {
+		return ErrInstanceNotFound
+	}
+	return nil
 }
 
 func (s *Store) UpdateInstanceStatus(ctx context.Context, id, status string) error {
@@ -463,9 +535,12 @@ func (s *Store) AuthenticateInstanceToken(ctx context.Context, token string) (In
 	var instance Instance
 	var createdAt, updatedAt int64
 	err := s.db.QueryRowContext(ctx, `
-SELECT id, name, engine, status, created_at, updated_at
+SELECT id, name, engine, status, created_at, updated_at,
+       always_online, reject_call, msg_reject_call, read_messages, ignore_groups, ignore_status
 FROM instances WHERE api_token_hash = ?`, security.TokenHash(token)).Scan(
 		&instance.ID, &instance.Name, &instance.Engine, &instance.Status, &createdAt, &updatedAt,
+		&instance.AlwaysOnline, &instance.RejectCall, &instance.MsgRejectCall, &instance.ReadMessages,
+		&instance.IgnoreGroups, &instance.IgnoreStatus,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Instance{}, false, nil

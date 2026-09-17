@@ -188,6 +188,15 @@ dialog[open] { animation: modalIn .2s ease-out; }
 .manageSave { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 .manageSave > span { flex: 1; color: var(--muted); font-size: 10px; }
 .manageSave .textButton { font-size: 10px; }
+.manageBehaviorGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0 16px; }
+.manageBehavior { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 12px; border: 1px solid #272e3b; border-radius: 8px; background: #0d1016; cursor: pointer; }
+.manageBehavior:has(input:checked) { border-color: #a5baff35; background: #a5baff05; }
+.manageBehavior > span:first-child { min-width: 0; }
+.manageBehavior strong { display: block; font-size: 11px; font-weight: 550; }
+.manageBehavior small { margin-top: 3px; }
+.manageBehavior .manageSwitch { flex-direction: column; align-items: flex-end; gap: 4px; }
+.manageBehavior .manageSwitch > span { font-size: 9px; color: var(--muted); }
+.manageRejectMessage { width: 100%; resize: vertical; min-height: 72px; font: inherit; font-size: 12px; }
 .manageFeedback { margin: 16px 0 0; padding: 10px 12px; border: 1px solid currentColor; border-radius: 7px; font-size: 11px; }
 .manageSuccess { color: #92d6b9; background: #92d6b908; }
 .manageDanger { border: 0; }
@@ -242,6 +251,7 @@ dialog[open] { animation: modalIn .2s ease-out; }
   .manageBody { padding: 0 18px; }
   .manageSection { padding: 20px 0; }
   .manageEvents { grid-template-columns: 1fr; }
+  .manageBehaviorGrid { grid-template-columns: 1fr; }
   .manageTokenRow, .tokenField { flex-wrap: wrap; }
   .manageTokenRow input, .tokenField input { flex: 1 0 100%; width: 100%; }
   .manageTokenRow button { flex: 1; }

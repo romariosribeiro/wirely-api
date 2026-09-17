@@ -307,6 +307,8 @@ func New(dependencies Dependencies) *Server {
 	mux.Handle("POST /api/instances/{id}/token", server.requireRole(storage.RoleAdmin, server.auditAction("instance.token.rotate", "instance", "id", http.HandlerFunc(server.rotateInstanceToken))))
 	mux.Handle("GET /api/instances/{id}/webhook", server.requireRole(storage.RoleAdmin, http.HandlerFunc(server.getInstanceWebhook)))
 	mux.Handle("PUT /api/instances/{id}/webhook", server.requireRole(storage.RoleAdmin, server.auditAction("instance.webhook.update", "instance", "id", http.HandlerFunc(server.updateInstanceWebhook))))
+	mux.Handle("GET /api/instances/{id}/settings", server.requireRole(storage.RoleAdmin, http.HandlerFunc(server.getInstanceSettings)))
+	mux.Handle("PUT /api/instances/{id}/settings", server.requireRole(storage.RoleAdmin, server.auditAction("instance.settings.update", "instance", "id", http.HandlerFunc(server.updateInstanceSettings))))
 	mux.Handle("GET /api/instances/{id}/events", server.requireRole(storage.RoleViewer, http.HandlerFunc(server.listActivityEvents)))
 	mux.Handle("GET /api/instances/{id}/webhook-deliveries", server.requireRole(storage.RoleViewer, http.HandlerFunc(server.listWebhookDeliveries)))
 	mux.Handle("POST /api/instances/{id}/webhook-deliveries/{deliveryID}/retry", server.requireRole(storage.RoleOperator, server.auditAction("webhook.retry", "instance", "id", http.HandlerFunc(server.retryWebhookDelivery))))
@@ -448,17 +450,52 @@ func (s *Server) listInstances(w http.ResponseWriter, r *http.Request) {
 func (s *Server) createInstance(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Name string `json:"name"`
+		storage.InstanceSettings
 	}
 	if err := decodeJSON(w, r, &payload); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request")
 		return
 	}
-	instance, err := s.store.CreateInstance(r.Context(), payload.Name)
+	instance, err := s.store.CreateInstanceWithSettings(r.Context(), payload.Name, payload.InstanceSettings)
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
 	writeJSON(w, http.StatusCreated, instance)
+}
+
+func (s *Server) getInstanceSettings(w http.ResponseWriter, r *http.Request) {
+	settings, err := s.store.GetInstanceSettings(r.Context(), r.PathValue("id"))
+	if errors.Is(err, storage.ErrInstanceNotFound) {
+		writeError(w, http.StatusNotFound, "instance not found")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to load instance settings")
+		return
+	}
+	writeJSON(w, http.StatusOK, settings)
+}
+
+func (s *Server) updateInstanceSettings(w http.ResponseWriter, r *http.Request) {
+	var settings storage.InstanceSettings
+	if err := decodeJSON(w, r, &settings); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	settings.MsgRejectCall = strings.TrimSpace(settings.MsgRejectCall)
+	if err := s.store.UpdateInstanceSettings(r.Context(), r.PathValue("id"), settings); err != nil {
+		if errors.Is(err, storage.ErrInstanceNotFound) {
+			writeError(w, http.StatusNotFound, "instance not found")
+		} else {
+			writeError(w, http.StatusUnprocessableEntity, err.Error())
+		}
+		return
+	}
+	if s.engine != nil {
+		_ = s.engine.ApplySettings(r.PathValue("id"), settings)
+	}
+	writeJSON(w, http.StatusOK, settings)
 }
 
 func (s *Server) deleteInstance(w http.ResponseWriter, r *http.Request) {

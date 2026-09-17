@@ -18,6 +18,7 @@ import (
 	"github.com/skip2/go-qrcode"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
+	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	_ "modernc.org/sqlite"
 
@@ -65,6 +66,7 @@ type session struct {
 	qrExpires  time.Time
 	lastError  string
 	connecting bool
+	settings   storage.InstanceSettings
 }
 
 func NewManager(dataDirectory string, store *storage.Store) (*Manager, error) {
@@ -366,6 +368,27 @@ func (m *Manager) JID(id string) string {
 	return current.client.Store.ID.ToNonAD().String()
 }
 
+func (m *Manager) ApplySettings(id string, settings storage.InstanceSettings) error {
+	current, err := m.get(id)
+	if err != nil {
+		return nil // The settings will be loaded when the session is initialized.
+	}
+	current.mu.Lock()
+	current.settings = settings
+	connected := current.client.IsConnected() && current.client.IsLoggedIn()
+	current.mu.Unlock()
+	if connected {
+		presence := types.PresenceUnavailable
+		if settings.AlwaysOnline {
+			presence = types.PresenceAvailable
+		}
+		if err := current.client.SendPresence(context.Background(), presence); err != nil {
+			return fmt.Errorf("apply instance presence: %w", err)
+		}
+	}
+	return nil
+}
+
 func (m *Manager) QRCode(id string) ([]byte, error) {
 	current, err := m.get(id)
 	if err != nil {
@@ -406,7 +429,8 @@ func (m *Manager) ensure(ctx context.Context, id string) (*session, error) {
 	if current, err := m.get(id); err == nil {
 		return current, nil
 	}
-	if _, err := m.store.GetInstance(ctx, id); err != nil {
+	instance, err := m.store.GetInstance(ctx, id)
+	if err != nil {
 		return nil, err
 	}
 
@@ -432,7 +456,7 @@ func (m *Manager) ensure(ctx context.Context, id string) (*session, error) {
 	sessionContext, cancel := context.WithCancel(context.Background())
 	current := &session{
 		id: id, client: whatsmeow.NewClient(device, nil), container: container,
-		cancel: cancel, status: "disconnected",
+		cancel: cancel, status: "disconnected", settings: instance.InstanceSettings,
 	}
 	current.client.AddEventHandler(func(event any) {
 		m.handleEvent(current, event)
@@ -473,6 +497,14 @@ func (m *Manager) handleEvent(current *session, event any) {
 		current.qrExpires = time.Time{}
 		current.mu.Unlock()
 		m.setState(current, "connected", "")
+		current.mu.RLock()
+		alwaysOnline := current.settings.AlwaysOnline
+		current.mu.RUnlock()
+		presence := types.PresenceUnavailable
+		if alwaysOnline {
+			presence = types.PresenceAvailable
+		}
+		go func() { _ = current.client.SendPresence(context.Background(), presence) }()
 	case *events.PairSuccess:
 		m.setState(current, "connecting", "")
 	case *events.Disconnected:
@@ -496,6 +528,23 @@ func (m *Manager) handleEvent(current *session, event any) {
 	case *events.PairError:
 		m.connectionError(current, value.Error)
 	case *events.Message:
+		current.mu.RLock()
+		settings := current.settings
+		current.mu.RUnlock()
+		if (settings.IgnoreGroups && value.Info.IsGroup) ||
+			(settings.IgnoreStatus && value.Info.Chat == types.StatusBroadcastJID) {
+			return
+		}
+		if settings.ReadMessages && !value.Info.IsFromMe {
+			go func() {
+				sender := value.Info.Sender
+				if sender.IsEmpty() {
+					sender = value.Info.Chat
+				}
+				_ = current.client.MarkRead(context.Background(), []types.MessageID{value.Info.ID},
+					value.Info.Timestamp, value.Info.Chat, sender)
+			}()
+		}
 		go m.emit(m.prepareIncomingMessage(current, value))
 	case *events.Receipt:
 		m.emit(receiptEvent(current.id, value))
@@ -516,6 +565,23 @@ func (m *Manager) handleEvent(current *session, event any) {
 		m.emit(newEvent("history.sync", current.id, time.Now().UTC(), data))
 	case *events.CallOffer:
 		m.emit(callEvent(current.id, "call.offer", value.BasicCallMeta, value.RemotePlatform, value.RemoteVersion, ""))
+		current.mu.RLock()
+		settings := current.settings
+		current.mu.RUnlock()
+		if settings.RejectCall {
+			go func() {
+				caller := value.From
+				if caller.IsEmpty() {
+					caller = value.CallCreator
+				}
+				if err := current.client.RejectCall(context.Background(), caller, value.CallID); err != nil {
+					return
+				}
+				if strings.TrimSpace(settings.MsgRejectCall) != "" {
+					_, _ = m.SendText(context.Background(), current.id, caller.ToNonAD().String(), settings.MsgRejectCall)
+				}
+			}()
+		}
 	case *events.CallAccept:
 		m.emit(callEvent(current.id, "call.accept", value.BasicCallMeta, value.RemotePlatform, value.RemoteVersion, ""))
 	case *events.CallReject:

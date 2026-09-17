@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { request, statusLabel, type Instance, type WebhookConfig } from './api'
+import { request, statusLabel, type Instance, type InstanceSettings, type WebhookConfig } from './api'
 
 const eventOptions = [
   { id: 'messages', title: 'Mensagens · todos os eventos', description: 'Recebidas, enviadas, edições, exclusões, reações e confirmações de entrega/leitura.' },
@@ -38,9 +38,19 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [loadVersion, setLoadVersion] = useState(0)
+  const [settings, setSettings] = useState<InstanceSettings | null>(null)
+  const [settingsDraft, setSettingsDraft] = useState<InstanceSettings>({
+    alwaysOnline: instance.alwaysOnline ?? false,
+    rejectCall: instance.rejectCall ?? false,
+    msgRejectCall: instance.msgRejectCall ?? '',
+    readMessages: instance.readMessages ?? false,
+    ignoreGroups: instance.ignoreGroups ?? false,
+    ignoreStatus: instance.ignoreStatus ?? false,
+  })
   const endpoint = `/api/instances/${instance.id}`
   const dirty = config !== null && (url !== config.url || enabled !== config.enabled ||
     JSON.stringify([...events].sort()) !== JSON.stringify([...config.events].sort()))
+  const settingsDirty = settings !== null && JSON.stringify(settingsDraft) !== JSON.stringify(settings)
 
   useEffect(() => {
     const element = dialog.current!
@@ -76,9 +86,21 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
     return () => controller.abort()
   }, [endpoint, tokenLoadVersion])
 
+  useEffect(() => {
+    let active = true
+    request<InstanceSettings>(`${endpoint}/settings`).then((value) => {
+      if (!active) return
+      setSettings(value)
+      setSettingsDraft(value)
+    }).catch((reason) => {
+      if (active) setError(reason instanceof Error ? reason.message : 'Falha ao carregar configurações.')
+    })
+    return () => { active = false }
+  }, [endpoint])
+
   function close() {
     if (busy) return
-    if (dirty && !window.confirm('Descartar as alterações não salvas do webhook?')) return
+    if ((dirty || settingsDirty) && !window.confirm('Descartar as alterações não salvas?')) return
     onClose()
   }
 
@@ -128,6 +150,26 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Falha ao salvar webhook.')
     } finally { setBusy('') }
+  }
+
+  async function saveSettings(event: FormEvent) {
+    event.preventDefault()
+    setBusy('settings'); setError(''); setNotice('')
+    try {
+      const result = await request<InstanceSettings>(`${endpoint}/settings`, {
+        method: 'PUT', body: JSON.stringify(settingsDraft),
+      })
+      setSettings(result)
+      setSettingsDraft(result)
+      await onChanged()
+      setNotice('Comportamento da instância atualizado.')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Falha ao salvar configurações.')
+    } finally { setBusy('') }
+  }
+
+  function setSetting<K extends keyof InstanceSettings>(key: K, value: InstanceSettings[K]) {
+    setSettingsDraft((current) => ({ ...current, [key]: value }))
   }
 
   async function instanceAction(action: 'disconnect' | 'delete') {
@@ -238,6 +280,52 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
               </div>
             </>
           )}
+        </form>
+
+        <form className="manageSection" onSubmit={(event) => void saveSettings(event)}>
+          <div className="manageSectionHeading">
+            <div><h3>Comportamento</h3><p>Automatize a presença, chamadas e o tratamento das mensagens recebidas.</p></div>
+          </div>
+          {!settings ? <div className="inlineLoading" role="status"><span className="spinner" aria-hidden="true" />Carregando configuração…</div> : <>
+            <div className="manageBehaviorGrid">
+              <label className="manageBehavior">
+                <span><strong>Sempre online</strong><small>Mantém a presença da conta como disponível enquanto estiver conectada.</small></span>
+                <span className="manageSwitch"><input type="checkbox" role="switch" checked={settingsDraft.alwaysOnline} disabled={!!busy}
+                  onChange={(event) => setSetting('alwaysOnline', event.target.checked)} /><span>{settingsDraft.alwaysOnline ? 'Ligado' : 'Desligado'}</span></span>
+              </label>
+              <label className="manageBehavior">
+                <span><strong>Rejeitar chamadas</strong><small>Recusa automaticamente chamadas recebidas nesta instância.</small></span>
+                <span className="manageSwitch"><input type="checkbox" role="switch" checked={settingsDraft.rejectCall} disabled={!!busy}
+                  onChange={(event) => setSetting('rejectCall', event.target.checked)} /><span>{settingsDraft.rejectCall ? 'Ligado' : 'Desligado'}</span></span>
+              </label>
+              <label className="manageBehavior">
+                <span><strong>Ler mensagens</strong><small>Envia confirmação de leitura automaticamente ao receber mensagens.</small></span>
+                <span className="manageSwitch"><input type="checkbox" role="switch" checked={settingsDraft.readMessages} disabled={!!busy}
+                  onChange={(event) => setSetting('readMessages', event.target.checked)} /><span>{settingsDraft.readMessages ? 'Ligado' : 'Desligado'}</span></span>
+              </label>
+              <label className="manageBehavior">
+                <span><strong>Ignorar grupos</strong><small>Não processa nem encaminha eventos de mensagens de grupos.</small></span>
+                <span className="manageSwitch"><input type="checkbox" role="switch" checked={settingsDraft.ignoreGroups} disabled={!!busy}
+                  onChange={(event) => setSetting('ignoreGroups', event.target.checked)} /><span>{settingsDraft.ignoreGroups ? 'Ligado' : 'Desligado'}</span></span>
+              </label>
+              <label className="manageBehavior">
+                <span><strong>Ignorar Status</strong><small>Não processa nem encaminha publicações do Status do WhatsApp.</small></span>
+                <span className="manageSwitch"><input type="checkbox" role="switch" checked={settingsDraft.ignoreStatus} disabled={!!busy}
+                  onChange={(event) => setSetting('ignoreStatus', event.target.checked)} /><span>{settingsDraft.ignoreStatus ? 'Ligado' : 'Desligado'}</span></span>
+              </label>
+            </div>
+            <label className="manageLabel" htmlFor="manage-reject-message">Mensagem ao rejeitar chamada</label>
+            <textarea id="manage-reject-message" className="manageRejectMessage" rows={3} maxLength={1000}
+              value={settingsDraft.msgRejectCall} disabled={!!busy || !settingsDraft.rejectCall}
+              onChange={(event) => setSetting('msgRejectCall', event.target.value)}
+              placeholder="Ex.: Não podemos atender chamadas. Envie uma mensagem por aqui." />
+            <div className="manageSave">
+              <span>{settingsDirty ? 'Alterações não salvas' : 'Configuração salva'}</span>
+              <button className="primaryButton" type="submit" disabled={!!busy || !settingsDirty} aria-busy={busy === 'settings'}>
+                {busy === 'settings' ? 'Salvando…' : 'Salvar comportamento'}
+              </button>
+            </div>
+          </>}
         </form>
 
         <section className="manageSection manageDanger" aria-labelledby="instance-actions">
