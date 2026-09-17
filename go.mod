@@ -4,7 +4,8 @@ go 1.26.0
 
 require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	go.mau.fi/whatsmeow v0.0.0-20260916100317-2375e1751bbd
+	go.mau.fi/whatsmeow v0.0.0-20260917111002-2e338d0ee73d
+	google.golang.org/protobuf v1.36.12
 	modernc.org/sqlite v1.36.0
 )
 
@@ -30,7 +31,6 @@ require (
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
-	google.golang.org/protobuf v1.36.12 // indirect
 	modernc.org/libc v1.61.13 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.8.2 // indirect
