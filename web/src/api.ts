@@ -183,6 +183,19 @@ export type BackupStatus = {
   nextBackupAt?: string
 }
 
+export type UpdateStatus = {
+  currentVersion: string
+  latestVersion?: string
+  updateAvailable: boolean
+  canApply: boolean
+  title?: string
+  notes?: string
+  publishedAt?: string
+  releaseUrl?: string
+  checkedAt: string
+  message?: string
+}
+
 export type AuditEntry = {
   id: string
   userId?: string

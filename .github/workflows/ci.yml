@@ -40,6 +40,8 @@ jobs:
       - name: Vet Go packages
         run: go vet ./...
       - name: Validate installer
-        run: sh -n ./install.sh
+        run: |
+          sh -n ./install.sh
+          sh -n ./deploy/apply-update.sh.template
       - name: Build Wirely
         run: go build -trimpath -o /tmp/wirely ./cmd/wirely

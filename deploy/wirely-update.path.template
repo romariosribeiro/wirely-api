@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch for verified Wirely updates
+
+[Path]
+PathExists=@WIRELY_DATA_DIR@/updates/wirely.pending
+Unit=wirely-update.service
+
+[Install]
+WantedBy=multi-user.target

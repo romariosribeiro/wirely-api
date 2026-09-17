@@ -66,6 +66,18 @@ p { line-height: 1.65; }
 .summary small { color: var(--muted); font-size: 11px; }
 .summary .serviceState { font-size: 16px; letter-spacing: -.03em; }
 .metricWarn { color: #efb27e; }
+.dashboardUpdate { width: 100%; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 14px; margin: -12px 0 22px; padding: 13px 15px; border: 1px solid #29313e; border-radius: 10px; color: #cbd2df; background: linear-gradient(110deg, #121720, #10141b); text-align: left; box-shadow: 0 3px 14px #0001; }
+.dashboardUpdate:hover { border-color: #3b4658; background: linear-gradient(110deg, #151b25, #111720); }
+.dashboardUpdate.available { border-color: #7793de42; background: linear-gradient(110deg, #172038, #111722 70%); }
+.dashboardUpdateIcon { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid #394457; border-radius: 10px; color: #91a2cf; background: #1a202b; font-size: 16px; }
+.dashboardUpdate.available .dashboardUpdateIcon { color: #c3d0ff; border-color: #8098dc55; background: #718bd21a; }
+.dashboardUpdate > span:nth-child(2) { min-width: 0; }
+.dashboardUpdate small { display: block; margin-bottom: 3px; color: #778398; font-size: 8px; font-weight: 650; letter-spacing: .1em; }
+.dashboardUpdate.available small { color: #9eafe1; }
+.dashboardUpdate strong { display: block; color: #d9dee8; font-size: 12px; font-weight: 600; }
+.dashboardUpdate em { display: block; margin-top: 3px; overflow: hidden; color: #818c9d; font-size: 10px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.dashboardUpdate > b { color: #9eabc1; font-size: 10px; font-weight: 550; white-space: nowrap; }
+.dashboardUpdate.available > b { color: #b7c6f4; }
 .instanceSection { overflow: hidden; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); box-shadow: 0 5px 20px #0001; }
 .sectionTitle { display: flex; align-items: center; gap: 9px; padding: 17px 20px; border-bottom: 1px solid var(--line); }
 .sectionTitle h2 { margin: 0; font-size: 13px; font-weight: 550; }
@@ -763,6 +775,33 @@ select:focus { border-color: #8ea5eb; box-shadow: 0 0 0 3px #a5baff12; }
 .auditFailed { color: #ef9ba3; background: #ef9ba30c; border: 1px solid #ef9ba32b; }
 .auditList code { overflow: hidden; color: #8d98aa; font-size: 9px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 .operationsFooterNote { margin-right: auto; color: var(--muted); font-size: 9px; }
+.updateModal { width: min(700px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; overflow: hidden; color: #e8ebf2; background: #11141b; border: 1px solid #323947; border-radius: 16px; box-shadow: 0 28px 100px #0008, 0 0 0 1px #ffffff03; }
+.updateModal[open] { display: flex; flex-direction: column; }
+.updateHeader > div > span { display: block; margin-top: 6px; color: #7e899a; font-size: 9px; }
+.updateBody { min-height: 0; padding: 22px 24px; overflow-y: auto; }
+.updateBody > .pageError, .updateBody > .manageFeedback { margin: 0 0 14px; }
+.updateHero { display: grid; grid-template-columns: 48px 1fr; align-items: center; gap: 15px; padding: 17px; border: 1px solid #2b333f; border-radius: 11px; background: linear-gradient(135deg, #151a22, #10141b); }
+.updateHero.available { border-color: #8198d94a; background: linear-gradient(135deg, #19233d, #111722); }
+.updateIcon { width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid #3b4658; border-radius: 13px; color: #98a8c3; background: #1b222e; font-size: 20px; }
+.updateHero.available .updateIcon { color: #c8d3ff; border-color: #8198d95c; background: #7891d41b; }
+.updateHero span { display: block; margin-bottom: 4px; color: #98a5b9; font-size: 9px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; }
+.updateHero strong { display: block; color: #e1e5ee; font-size: 18px; font-weight: 600; letter-spacing: -.035em; }
+.updateHero small { display: block; margin-top: 5px; color: #8994a5; font-size: 10px; line-height: 1.5; }
+.updateNotes { margin-top: 14px; padding: 17px; border: 1px solid #292f3a; border-radius: 10px; background: #0d1016; }
+.updateNotesHeading { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; padding-bottom: 12px; border-bottom: 1px solid #222833; }
+.updateNotesHeading span { display: block; margin-bottom: 5px; color: #778398; font-size: 8px; font-weight: 650; letter-spacing: .1em; }
+.updateNotesHeading h3 { margin: 0; font-size: 12px; }
+.updateNotesHeading time { color: #7e899a; font-size: 9px; white-space: nowrap; }
+.updateNotesText { max-height: 210px; margin: 14px 0 12px; overflow-y: auto; color: #a8b1c0; font-size: 10px; line-height: 1.75; white-space: pre-wrap; }
+.updateNotes > a { color: #9eb1e8; font-size: 10px; text-decoration: none; }
+.updateNotes > a:hover { color: #c4d0f5; }
+.updateSafety { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.updateSafety > div { display: grid; grid-template-columns: 22px 1fr; gap: 9px; padding: 12px; border: 1px solid #272e39; border-radius: 9px; background: #10141a; }
+.updateSafety > div > span { width: 22px; height: 22px; display: grid; place-items: center; border: 1px solid #3a4558; border-radius: 7px; color: #9eafe0; font-size: 9px; }
+.updateSafety p { margin: 0; }
+.updateSafety strong { display: block; color: #c8cfdb; font-size: 10px; font-weight: 550; }
+.updateSafety small { display: block; margin-top: 4px; color: #798596; font-size: 8px; line-height: 1.5; }
+.updateFooter { gap: 8px; }
 @media (max-width: 680px) {
   .operationsModal { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); }
   .operationsTabs { padding: 9px 14px; }
@@ -772,4 +811,13 @@ select:focus { border-color: #8ea5eb; box-shadow: 0 0 0 3px #a5baff12; }
   .backupList article > div:last-child > * { flex: 1; }
   .auditList article { grid-template-columns: 36px 1fr; }
   .auditList code { grid-column: 2; text-align: left; }
+  .dashboardUpdate { grid-template-columns: 34px 1fr; margin-top: -8px; }
+  .dashboardUpdateIcon { width: 34px; height: 34px; }
+  .dashboardUpdate > b { grid-column: 2; }
+  .dashboardUpdate em { white-space: normal; }
+  .updateModal { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); }
+  .updateBody { padding: 18px 14px; }
+  .updateSafety { grid-template-columns: 1fr; }
+  .updateFooter { flex-wrap: wrap; }
+  .updateFooter button { flex: 1 1 100%; }
 }

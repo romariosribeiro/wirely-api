@@ -9,10 +9,12 @@ import (
 	"time"
 
 	"github.com/romariosribeiro/wirely-api/internal/backup"
+	"github.com/romariosribeiro/wirely-api/internal/buildinfo"
 	"github.com/romariosribeiro/wirely-api/internal/engine"
 	"github.com/romariosribeiro/wirely-api/internal/outbox"
 	"github.com/romariosribeiro/wirely-api/internal/server"
 	"github.com/romariosribeiro/wirely-api/internal/storage"
+	"github.com/romariosribeiro/wirely-api/internal/updater"
 	"github.com/romariosribeiro/wirely-api/internal/webhook"
 )
 
@@ -107,6 +109,7 @@ func main() {
 	}
 	backupManager.Start()
 	defer backupManager.Close()
+	updateManager := updater.New(buildinfo.Version, dataDirectory)
 
 	app := server.New(server.Dependencies{
 		Store:         store,
@@ -114,6 +117,7 @@ func main() {
 		Webhooks:      webhookDispatcher,
 		Queue:         messageQueue,
 		Backups:       backupManager,
+		Updates:       updateManager,
 		RateLimit:     envPositiveInt("WIRELY_API_RATE_LIMIT", 120),
 		SecureCookies: strings.EqualFold(os.Getenv("WIRELY_SECURE_COOKIE"), "true"),
 		Restart: func() {

@@ -15,10 +15,12 @@ const actionLabels: Record<string, string> = {
   'chat.read': 'Conversa marcada como lida', 'queue.cancel': 'Envio cancelado',
   'queue.retry': 'Envio reenviado', 'backup.create': 'Backup criado',
   'backup.restore': 'Restauração preparada', 'backup.delete': 'Backup excluído',
+  'system.update': 'Wirely atualizada',
 }
 
 const reasonLabels: Record<string, string> = {
   manual: 'Manual', automatic: 'Automático', 'pre-restore': 'Segurança pré-restauração',
+  'pre-update': 'Segurança pré-atualização',
 }
 
 function dateTime(value: string) {

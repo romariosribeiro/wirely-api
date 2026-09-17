@@ -1,0 +1,13 @@
+[Unit]
+Description=Apply a verified Wirely update
+Documentation=https://github.com/romariosribeiro/wirely-api
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/wirely/apply-update
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=read-only
+ProtectSystem=strict
+ReadWritePaths=@WIRELY_INSTALL_DIR@ @WIRELY_DATA_DIR@/updates

@@ -389,6 +389,9 @@ if [ "$BUILD_ONLY" = "false" ]; then
 
     INSTALL_BIN="$INSTALL_DIR/wirely"
     [ -f "$SCRIPT_DIR/deploy/wirely.service.template" ] || fail "systemd template is missing"
+    [ -f "$SCRIPT_DIR/deploy/wirely-update.service.template" ] || fail "update systemd template is missing"
+    [ -f "$SCRIPT_DIR/deploy/wirely-update.path.template" ] || fail "update path template is missing"
+    [ -f "$SCRIPT_DIR/deploy/apply-update.sh.template" ] || fail "update helper template is missing"
     command -v systemctl >/dev/null 2>&1 || fail "systemd is required"
     command -v install >/dev/null 2>&1 || fail "the install command is required"
 fi
@@ -423,6 +426,7 @@ fi
 
 install -d -m 0750 -o "$TARGET_USER" -g "$TARGET_GROUP" "$INSTALL_DIR"
 install -d -m 0750 -o "$TARGET_USER" -g "$TARGET_GROUP" "$DATA_DIR"
+install -d -m 0700 -o "$TARGET_USER" -g "$TARGET_GROUP" "$DATA_DIR/updates"
 if [ -n "$MIGRATE_FROM" ]; then
     cp -a "$MIGRATE_FROM/." "$DATA_DIR/"
     printf 'Data copied from %s (the source was preserved).\n' "$MIGRATE_FROM"
@@ -446,8 +450,28 @@ sed \
     "$SCRIPT_DIR/deploy/wirely.service.template" > "$SYSTEMD_DIR/$SERVICE_NAME"
 chmod 0644 "$SYSTEMD_DIR/$SERVICE_NAME"
 
+install -d -m 0755 -o root -g root /usr/local/lib/wirely
+sed \
+    -e "s|@WIRELY_USER@|$TARGET_USER|g" \
+    -e "s|@WIRELY_GROUP@|$TARGET_GROUP|g" \
+    -e "s|@WIRELY_DATA_DIR@|$DATA_DIR|g" \
+    -e "s|@WIRELY_BIN@|$INSTALL_BIN|g" \
+    "$SCRIPT_DIR/deploy/apply-update.sh.template" > /usr/local/lib/wirely/apply-update
+chown root:root /usr/local/lib/wirely/apply-update
+chmod 0755 /usr/local/lib/wirely/apply-update
+
+sed \
+    -e "s|@WIRELY_INSTALL_DIR@|$INSTALL_DIR|g" \
+    -e "s|@WIRELY_DATA_DIR@|$DATA_DIR|g" \
+    "$SCRIPT_DIR/deploy/wirely-update.service.template" > "$SYSTEMD_DIR/wirely-update.service"
+sed \
+    -e "s|@WIRELY_DATA_DIR@|$DATA_DIR|g" \
+    "$SCRIPT_DIR/deploy/wirely-update.path.template" > "$SYSTEMD_DIR/wirely-update.path"
+chmod 0644 "$SYSTEMD_DIR/wirely-update.service" "$SYSTEMD_DIR/wirely-update.path"
+
 systemctl daemon-reload
 systemctl enable "$SERVICE_NAME" >/dev/null
+systemctl enable --now wirely-update.path >/dev/null
 
 if [ "$OPEN_FIREWALL" = "true" ]; then
     port=${ADDRESS##*:}

@@ -1,0 +1,38 @@
+#!/bin/sh
+set -eu
+
+SERVICE_NAME="wirely.service"
+PENDING="@WIRELY_DATA_DIR@/updates/wirely.pending"
+TARGET="@WIRELY_BIN@"
+PREVIOUS="@WIRELY_BIN@.previous"
+TEMPORARY="@WIRELY_BIN@.updating"
+
+[ -f "$PENDING" ] && [ ! -L "$PENDING" ] || exit 0
+[ "$(stat -c '%U:%G' "$PENDING")" = "@WIRELY_USER@:@WIRELY_GROUP@" ] || {
+    printf 'wirely-update: invalid pending file owner\n' >&2
+    exit 1
+}
+[ "$(od -An -tx1 -N4 "$PENDING" | tr -d ' \n')" = "7f454c46" ] || {
+    printf 'wirely-update: pending file is not a Linux executable\n' >&2
+    exit 1
+}
+
+rollback() {
+    rm -f -- "$TEMPORARY"
+    if [ ! -x "$TARGET" ] && [ -x "$PREVIOUS" ]; then
+        mv -f -- "$PREVIOUS" "$TARGET"
+    fi
+    systemctl start "$SERVICE_NAME" >/dev/null 2>&1 || true
+}
+trap rollback EXIT HUP INT TERM
+
+install -m 0755 -o @WIRELY_USER@ -g @WIRELY_GROUP@ "$PENDING" "$TEMPORARY"
+systemctl stop "$SERVICE_NAME"
+if [ -e "$TARGET" ]; then
+    mv -f -- "$TARGET" "$PREVIOUS"
+fi
+mv -f -- "$TEMPORARY" "$TARGET"
+rm -f -- "$PENDING"
+systemctl start "$SERVICE_NAME"
+
+trap - EXIT HUP INT TERM

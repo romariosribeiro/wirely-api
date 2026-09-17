@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/romariosribeiro/wirely-api/internal/buildinfo"
 	"github.com/romariosribeiro/wirely-api/internal/engine"
 	"github.com/romariosribeiro/wirely-api/internal/storage"
 	"github.com/romariosribeiro/wirely-api/internal/webui"
@@ -134,6 +135,7 @@ type Dependencies struct {
 	Queue          MessageQueue
 	RateLimit      int
 	Backups        BackupManager
+	Updates        UpdateManager
 	Restart        func()
 }
 
@@ -159,6 +161,7 @@ type Server struct {
 	startedAt      time.Time
 	limiter        *rateLimiter
 	backups        BackupManager
+	updates        UpdateManager
 	restart        func()
 	httpMetrics    *httpMetrics
 }
@@ -213,7 +216,7 @@ func New(dependencies Dependencies) *Server {
 	webhookTester, _ := dependencies.Webhooks.(WebhookTester)
 	server := &Server{store: dependencies.Store, engine: dependencies.Engine, connector: connector, sender: sender, structured: structured, presence: presence, groups: groups, profile: profile, webhooks: dependencies.Webhooks, webhookTester: webhookTester,
 		contacts: contacts, chatSender: chatSender, receivedMedia: receivedMedia, messageActions: messageActions, organization: organization, queue: dependencies.Queue, secureCookies: dependencies.SecureCookies, startedAt: time.Now(),
-		limiter: newRateLimiter(dependencies.RateLimit, time.Minute), backups: dependencies.Backups, restart: dependencies.Restart,
+		limiter: newRateLimiter(dependencies.RateLimit, time.Minute), backups: dependencies.Backups, updates: dependencies.Updates, restart: dependencies.Restart,
 		httpMetrics: newHTTPMetrics()}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", server.health)
@@ -291,6 +294,8 @@ func New(dependencies Dependencies) *Server {
 	mux.Handle("GET /api/backups/{backupID}/download", server.requireRole(storage.RoleOwner, http.HandlerFunc(server.downloadBackup)))
 	mux.Handle("POST /api/backups/{backupID}/restore", server.requireRole(storage.RoleOwner, server.auditAction("backup.restore", "backup", "backupID", http.HandlerFunc(server.restoreBackup))))
 	mux.Handle("DELETE /api/backups/{backupID}", server.requireRole(storage.RoleOwner, server.auditAction("backup.delete", "backup", "backupID", http.HandlerFunc(server.deleteBackup))))
+	mux.Handle("GET /api/system/update", server.requireRole(storage.RoleOwner, http.HandlerFunc(server.checkUpdate)))
+	mux.Handle("POST /api/system/update", server.requireRole(storage.RoleOwner, server.auditAction("system.update", "system", "wirely", http.HandlerFunc(server.applyUpdate))))
 	mux.Handle("POST /api/users", server.requireRole(storage.RoleOwner, server.auditAction("user.create", "user", "", http.HandlerFunc(server.createUser))))
 	mux.Handle("PATCH /api/users/{userID}", server.requireRole(storage.RoleOwner, server.auditAction("user.update", "user", "userID", http.HandlerFunc(server.updateUser))))
 	mux.Handle("PUT /api/users/{userID}/password", server.requireRole(storage.RoleOwner, server.auditAction("user.password.reset", "user", "userID", http.HandlerFunc(server.resetUserPassword))))
@@ -344,7 +349,7 @@ func (s *Server) Handler() http.Handler {
 
 func (s *Server) health(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{
-		"status": "ok", "service": "wirely-api", "version": "0.9.0",
+		"status": "ok", "service": "wirely-api", "version": buildinfo.Version,
 	})
 }
 

@@ -1,6 +1,6 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react'
 
-import { can, request, statusLabel, type Instance, type ConnectionState, type MetricsSnapshot, type User, type UserRole } from './api'
+import { can, request, statusLabel, type Instance, type ConnectionState, type MetricsSnapshot, type UpdateStatus, type User, type UserRole } from './api'
 import { ManageModal } from './ManageModal'
 import { PairingModal } from './PairingModal'
 import { LoadingState } from './LoadingState'
@@ -11,6 +11,7 @@ import { InboxModal } from './InboxModal'
 import { UsersModal } from './UsersModal'
 import { MetricsModal } from './MetricsModal'
 import { OperationsModal } from './OperationsModal'
+import { UpdateModal } from './UpdateModal'
 
 const roleLabels: Record<UserRole, string> = { owner: 'Proprietário', admin: 'Administrador', operator: 'Operador', viewer: 'Visualizador' }
 
@@ -182,7 +183,9 @@ function Dashboard({
   const [usersOpen, setUsersOpen] = useState(false)
   const [metricsOpen, setMetricsOpen] = useState(false)
   const [operationsOpen, setOperationsOpen] = useState(false)
+  const [updateOpen, setUpdateOpen] = useState(false)
   const [metrics, setMetrics] = useState<MetricsSnapshot | null>(null)
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
   const canAdmin = can(user, 'admin')
   const canOperate = can(user, 'operator')
   const isOwner = user.role === 'owner'
@@ -231,6 +234,22 @@ function Dashboard({
       window.clearInterval(timer)
     }
   }, [])
+
+  useEffect(() => {
+    if (!isOwner) return
+    let active = true
+    const loadUpdate = async () => {
+      try {
+        const value = await request<UpdateStatus>('/api/system/update')
+        if (active) setUpdateStatus(value)
+      } catch {
+        // The dashboard remains available when GitHub cannot be reached.
+      }
+    }
+    void loadUpdate()
+    const timer = window.setInterval(() => void loadUpdate(), 15 * 60 * 1000)
+    return () => { active = false; window.clearInterval(timer) }
+  }, [isOwner])
 
   useEffect(() => {
     if (!selected || !connectReady) return
@@ -383,6 +402,18 @@ function Dashboard({
         </article>
       </section>
 
+      {isOwner && updateStatus && <button type="button"
+        className={`dashboardUpdate ${updateStatus.updateAvailable ? 'available' : ''}`}
+        onClick={() => setUpdateOpen(true)}>
+        <span className="dashboardUpdateIcon" aria-hidden="true">{updateStatus.updateAvailable ? '↓' : '✓'}</span>
+        <span><small>{updateStatus.updateAvailable ? 'ATUALIZAÇÃO DISPONÍVEL' : 'SISTEMA ATUALIZADO'}</small>
+          <strong>{updateStatus.updateAvailable
+            ? `Wirely v${updateStatus.latestVersion}`
+            : `Wirely v${updateStatus.currentVersion}`}</strong>
+          <em>{updateStatus.updateAvailable ? 'Veja as mudanças e atualize com backup automático.' : 'Clique para verificar versões e segurança da instalação.'}</em></span>
+        <b>{updateStatus.updateAvailable ? 'Ver atualização' : 'Verificar'} <span aria-hidden="true">→</span></b>
+      </button>}
+
       <section className="instanceSection">
         <div className="sectionTitle">
           <h2>Suas instâncias</h2>
@@ -427,6 +458,7 @@ function Dashboard({
 
       {metricsOpen && <MetricsModal onClose={() => setMetricsOpen(false)} />}
       {operationsOpen && <OperationsModal user={user} onClose={() => setOperationsOpen(false)} />}
+      {updateOpen && updateStatus && <UpdateModal initial={updateStatus} onClose={() => setUpdateOpen(false)} onChanged={setUpdateStatus} />}
       {docsOpen && <DocsModal instances={instances} canManage={canAdmin} onClose={() => setDocsOpen(false)}
         onManage={(instance) => { setDocsOpen(false); setManaged(instance) }} />}
       {usersOpen && <UsersModal onClose={() => setUsersOpen(false)} />}

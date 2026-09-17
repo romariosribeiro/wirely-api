@@ -50,6 +50,7 @@ written in Go and the panel uses React, TypeScript, and Vite.
 - Complete OpenAPI coverage for public and administrative routes
 - Health endpoint at `GET /api/health`
 - Shell installer and hardened systemd service
+- Dashboard update card with release notes, automatic backup, SHA-256 verification, and binary rollback
 
 ## Requirements for development
 
@@ -88,6 +89,13 @@ The installer:
 - keeps configuration in `/home/USER/wirely/wirely.env`;
 - keeps databases and sessions in `/home/USER/wirely/data`;
 - enables and starts the hardened systemd service.
+- installs an isolated systemd update helper; the API can only stage verified
+  files inside its data directory and cannot overwrite its own installation.
+
+The owner dashboard checks stable GitHub releases every 15 minutes. Applying an
+update creates a `pre-update` backup, validates the official SHA-256 file,
+preserves the previous binary as `wirely.previous`, and restarts Wirely. The
+button remains disabled when no compatible verified release artifact is available.
 
 For the standard Ubuntu user, everything is placed under `/home/ubuntu/wirely`.
 
