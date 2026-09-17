@@ -6,12 +6,18 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/romariosribeiro/wirely-api/internal/engine"
 )
 
 type recordingConnector struct {
 	instanceID string
 	jid        string
 	err        error
+	state      engine.State
+	qrCode     []byte
+	pairPhone  string
+	pairCode   string
 }
 
 func (connector *recordingConnector) Connect(instanceID string) error {
@@ -20,6 +26,23 @@ func (connector *recordingConnector) Connect(instanceID string) error {
 }
 
 func (connector *recordingConnector) JID(string) string { return connector.jid }
+
+func (connector *recordingConnector) State(string) (engine.State, error) {
+	if connector.state.Status == "" {
+		return engine.State{Status: "connected"}, nil
+	}
+	return connector.state, nil
+}
+
+func (connector *recordingConnector) QRCode(string) ([]byte, error) {
+	return connector.qrCode, nil
+}
+
+func (connector *recordingConnector) PairPhone(_ context.Context, instanceID, phone string) (string, error) {
+	connector.instanceID = instanceID
+	connector.pairPhone = phone
+	return connector.pairCode, connector.err
+}
 
 func TestPublicInstanceReturnsOnlyBearerOwner(t *testing.T) {
 	store := testStore(t)
@@ -107,6 +130,39 @@ func TestPublicConnectConfiguresWebhookSubscriptions(t *testing.T) {
 	}
 	if strings.Contains(response.Body.String(), "whsec_") {
 		t.Fatal("connect response exposed the webhook signing secret")
+	}
+}
+
+func TestPublicConnectReturnsQRCodeBase64(t *testing.T) {
+	store := testStore(t)
+	instance, _ := store.CreateInstance(context.Background(), "Connect QR")
+	connector := &recordingConnector{
+		state:  engine.State{Status: "qr", QRAvailable: true, QRExpiresAt: "2026-09-17T20:00:00Z"},
+		qrCode: []byte("png-data"),
+	}
+	app := New(Dependencies{Store: store, Connector: connector})
+	request := httptest.NewRequest(http.MethodPost, "/api/instance/connect", nil)
+	request.Header.Set("Authorization", "Bearer "+instance.APIToken)
+	response := httptest.NewRecorder()
+	app.Handler().ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"qrAvailable":true`) || !strings.Contains(response.Body.String(), `"data":"cG5nLWRhdGE="`) {
+		t.Fatalf("unexpected QR connect response: %d %s", response.Code, response.Body.String())
+	}
+}
+
+func TestPublicConnectReturnsPhonePairingCode(t *testing.T) {
+	store := testStore(t)
+	instance, _ := store.CreateInstance(context.Background(), "Connect phone")
+	connector := &recordingConnector{pairCode: "ABCD-EFGH"}
+	app := New(Dependencies{Store: store, Connector: connector})
+	request := httptest.NewRequest(http.MethodPost, "/api/instance/connect", strings.NewReader(`{"phone":"5548988150709"}`))
+	request.Header.Set("Authorization", "Bearer "+instance.APIToken)
+	response := httptest.NewRecorder()
+	app.Handler().ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK || connector.pairPhone != "5548988150709" || !strings.Contains(response.Body.String(), `"pairingCode":"ABCD-EFGH"`) || !strings.Contains(response.Body.String(), `"expiresIn":160`) {
+		t.Fatalf("unexpected phone pairing response: %d %s", response.Code, response.Body.String())
 	}
 }
 

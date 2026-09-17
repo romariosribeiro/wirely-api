@@ -43,6 +43,15 @@ type InstanceConnector interface {
 	Connect(string) error
 }
 
+type InstancePhonePairer interface {
+	PairPhone(context.Context, string, string) (string, error)
+}
+
+type InstanceQRProvider interface {
+	State(string) (engine.State, error)
+	QRCode(string) ([]byte, error)
+}
+
 type InstanceJIDProvider interface {
 	JID(string) string
 }

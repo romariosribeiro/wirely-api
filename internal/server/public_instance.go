@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/romariosribeiro/wirely-api/internal/engine"
 	"github.com/romariosribeiro/wirely-api/internal/storage"
@@ -16,7 +18,10 @@ import (
 type connectRequest struct {
 	Subscribe  *[]string `json:"subscribe,omitempty"`
 	WebhookURL *string   `json:"webhookUrl,omitempty"`
+	Phone      string    `json:"phone,omitempty"`
 }
+
+const connectPairingWait = 30 * time.Second
 
 var errConnectWebhookURL = errors.New("invalid connect webhook URL")
 
@@ -77,22 +82,90 @@ func (s *Server) publicConnectInstance(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to configure webhook")
 		return
 	}
-	if err := s.connector.Connect(instanceID); err != nil {
-		writeError(w, http.StatusUnprocessableEntity, err.Error())
-		return
+	data := map[string]any{
+		"eventString": strings.Join(eventNames, ","),
+		"webhookUrl":  webhookURL,
+	}
+	if strings.TrimSpace(payload.Phone) != "" {
+		pairer, ok := s.connector.(InstancePhonePairer)
+		if !ok {
+			writeError(w, http.StatusServiceUnavailable, "phone pairing is unavailable")
+			return
+		}
+		code, pairErr := pairer.PairPhone(r.Context(), instanceID, payload.Phone)
+		if errors.Is(pairErr, engine.ErrPairingUnavailable) {
+			writeError(w, http.StatusConflict, pairErr.Error())
+			return
+		}
+		if pairErr != nil {
+			writeError(w, http.StatusUnprocessableEntity, pairErr.Error())
+			return
+		}
+		data["status"] = "pairing"
+		data["pairingCode"] = code
+		data["expiresIn"] = 160
+	} else {
+		if err := s.connector.Connect(instanceID); err != nil {
+			writeError(w, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+		s.populateConnectQR(r.Context(), instanceID, data)
 	}
 	jid := ""
 	if provider, ok := s.connector.(InstanceJIDProvider); ok {
 		jid = provider.JID(instanceID)
 	}
+	data["jid"] = jid
 	writeJSON(w, http.StatusOK, map[string]any{
-		"data": map[string]string{
-			"eventString": strings.Join(eventNames, ","),
-			"jid":         jid,
-			"webhookUrl":  webhookURL,
-		},
+		"data":    data,
 		"message": "success",
 	})
+}
+
+func (s *Server) populateConnectQR(ctx context.Context, instanceID string, data map[string]any) {
+	provider, ok := s.connector.(InstanceQRProvider)
+	if !ok {
+		return
+	}
+	waitCtx, cancel := context.WithTimeout(ctx, connectPairingWait)
+	defer cancel()
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		state, err := provider.State(instanceID)
+		if err != nil {
+			data["status"] = "error"
+			data["lastError"] = err.Error()
+			return
+		}
+		data["status"] = state.Status
+		data["qrAvailable"] = state.QRAvailable
+		if state.QRExpiresAt != "" {
+			data["qrExpiresAt"] = state.QRExpiresAt
+		}
+		if state.LastError != "" {
+			data["lastError"] = state.LastError
+		}
+		if state.QRAvailable {
+			png, qrErr := provider.QRCode(instanceID)
+			if qrErr == nil {
+				data["qrCode"] = map[string]string{
+					"mimetype": "image/png",
+					"data":     base64.StdEncoding.EncodeToString(png),
+				}
+			}
+			return
+		}
+		if state.Status == "connected" || state.Status == "error" || state.Status == "disconnected" || state.Status == "logged_out" {
+			return
+		}
+		select {
+		case <-waitCtx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }
 
 func (s *Server) configureConnectWebhook(r *http.Request, instanceID string, payload connectRequest) ([]string, string, error) {

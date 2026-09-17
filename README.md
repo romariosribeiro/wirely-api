@@ -498,11 +498,31 @@ curl -X POST 'http://localhost:8080/api/instance/connect' \
   }'
 ```
 
-The response returns the normalized subscriptions in `data.eventString`, the
-configured `data.webhookUrl`, and `data.jid`. Omitting the body only starts or
-restores the connection without changing the existing webhook.
+Without `phone`, the request waits up to 30 seconds and returns the current QR
+Code in `data.qrCode.data` as Base64 when it becomes available. The response
+also includes `data.status`, `data.qrAvailable`, the normalized subscriptions
+in `data.eventString`, the configured `data.webhookUrl`, and `data.jid`.
+Omitting the body starts or restores the connection without changing the
+existing webhook.
 
-Pairing expects an international phone number without `+`:
+To configure the webhook and request a phone pairing code in the same call, add
+the international phone number without `+`:
+
+```bash
+curl -X POST 'http://localhost:8080/api/instance/connect' \
+  -H 'Authorization: Bearer wly_your_token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "phone":"5511999999999",
+    "subscribe":["MESSAGE","CONNECTION","QRCODE"],
+    "webhookUrl":"https://your-domain.example/webhook"
+  }'
+```
+
+This mode returns `data.pairingCode` and `data.expiresIn`.
+
+The dedicated pairing endpoint remains available for integrations that prefer a
+separate call. It expects an international phone number without `+`:
 
 ```bash
 curl -X POST 'http://localhost:8080/api/instance/pair' \
