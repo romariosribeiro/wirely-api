@@ -5,6 +5,11 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-09-18
+
+- Made every Advanced API documentation endpoint selectable, with a description,
+  instance-aware cURL example, and copy action.
+
 ## [0.14.0] - 2026-09-18
 
 - Authenticated SSE stream with filtering, heartbeat, and reconnect hint.
@@ -97,6 +102,7 @@ All notable changes to Wirely API are documented here. The project follows
 - Each instance continues to own a single webhook configuration.
 
 [Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.9.0...HEAD
+[0.14.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.14.1
 [0.14.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.14.0
 [0.13.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.13.0
 [0.12.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.12.0

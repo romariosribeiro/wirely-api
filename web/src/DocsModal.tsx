@@ -1014,7 +1014,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
       onCancel={(event) => { event.preventDefault(); onClose() }}>
       <header className="manageHeader">
         <div><p className="eyebrow">REFERÊNCIA DA API</p><h2 id="docs-title">Documentação</h2>
-          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.14.0</span></div>
+          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.14.1</span></div>
         <button className="closeButton" type="button" aria-label="Fechar documentação" onClick={onClose}>×</button>
       </header>
       <div className="docsBody">
@@ -1089,7 +1089,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
           <p className="docsDelayNote"><strong>Recursos avançados</strong><span>Texto, localização, contato e mídia aceitam <code>replyTo</code>, <code>mentions</code> e <code>forwarded</code>. Texto aceita <code>linkPreview</code>; imagem e vídeo aceitam <code>viewOnce</code>. Na mídia, envie <code>messageOptions</code> como JSON multipart.</span></p>
         </section>
 
-        <AdvancedDocs />
+        <AdvancedDocs token={token} />
 
         <section className="docsSection" aria-labelledby="docs-organization-title">
           <div className="docsSectionTitle"><div><h3 id="docs-organization-title">Newsletters, etiquetas e comunidades</h3>
