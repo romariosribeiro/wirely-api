@@ -44,6 +44,8 @@ All notable changes to Wirely API are documented here. The project follows
   the server, frontend, OpenAPI, and documentation.
 - Instance cards now show only the creation date, without exposing the internal
   WhatsApp engine name.
+- Secondary actions in the instance management modal now have visible button
+  surfaces, borders, and hover states instead of looking like plain text.
 
 ## [0.9.0] - 2026-09-17
 

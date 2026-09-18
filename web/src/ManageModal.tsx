@@ -291,8 +291,8 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
               <fieldset className="manageEvents" disabled={!!busy}>
                 <legend>Eventos recebidos no webhook</legend>
                 <div className="manageSelection">
-                  <button type="button" className="textButton" onClick={() => setEvents(eventOptions.map((item) => item.id))}>Selecionar todos</button>
-                  <button type="button" className="textButton" onClick={() => setEvents([])}>Limpar seleção</button>
+                  <button type="button" className="manageSubtleButton" onClick={() => setEvents(eventOptions.map((item) => item.id))}>Selecionar todos</button>
+                  <button type="button" className="manageSubtleButton" onClick={() => setEvents([])}>Limpar seleção</button>
                 </div>
                 {eventOptions.map((item) => (
                   <label className="manageEvent" key={item.id}>
@@ -314,7 +314,7 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
               )}
               <div className="manageSave">
                 <span>{dirty ? 'Alterações não salvas' : 'Configuração salva'}</span>
-                {config.hasSecret && <button type="button" className="textButton" disabled={!!busy}
+                {config.hasSecret && <button type="button" className="manageSubtleButton" disabled={!!busy}
                   onClick={(event) => void saveWebhook(event, true)}>Renovar segredo</button>}
                 <button className="primaryButton" type="submit" disabled={!!busy} aria-busy={busy === 'webhook'}>
                   {busy === 'webhook' ? 'Salvando…' : 'Salvar webhook'}
@@ -343,7 +343,7 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
             <p className="manageHint">Compatível com HTTP, HTTPS e SOCKS5. Usuário e senha são opcionais. Alterar ou remover reconecta a instância.</p>
             <div className="manageSave">
               <span>{proxy.configured ? `${proxy.scheme?.toUpperCase()} · ${proxy.host}:${proxy.port}` : 'Conexão direta, sem proxy'}</span>
-              {proxy.configured && <button type="button" className="textButton manageProxyRemove" disabled={!!busy}
+              {proxy.configured && <button type="button" className="manageSubtleButton manageProxyRemove" disabled={!!busy}
                 onClick={() => void removeProxy()}>Remover proxy</button>}
               <button className="primaryButton" type="submit" disabled={!!busy || !proxyDirty} aria-busy={busy === 'proxy'}>
                 {busy === 'proxy' ? 'Aplicando…' : proxy.configured ? 'Trocar proxy' : 'Salvar proxy'}
