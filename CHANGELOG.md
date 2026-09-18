@@ -46,6 +46,8 @@ All notable changes to Wirely API are documented here. The project follows
   WhatsApp engine name.
 - Secondary actions in the instance management modal now have visible button
   surfaces, borders, and hover states instead of looking like plain text.
+- The update status card and modal now use green when the system is current and
+  red when a newer version is available.
 
 ## [0.9.0] - 2026-09-17
 
