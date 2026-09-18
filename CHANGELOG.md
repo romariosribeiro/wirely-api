@@ -48,6 +48,8 @@ All notable changes to Wirely API are documented here. The project follows
   surfaces, borders, and hover states instead of looking like plain text.
 - The update status card and modal now use green when the system is current and
   red when a newer version is available.
+- The proxy manager now includes an expandable Windows SSH tunnel assistant
+  that generates personalized PowerShell, VPS test, and SOCKS5 configuration commands.
 
 ## [0.9.0] - 2026-09-17
 

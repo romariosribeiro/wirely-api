@@ -40,6 +40,10 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
   const [loadVersion, setLoadVersion] = useState(0)
   const [proxy, setProxy] = useState<ProxyConfig | null>(null)
   const [proxyURL, setProxyURL] = useState('')
+  const [sshHost, setSSHHost] = useState(() => window.location.hostname || 'IP_OU_DOMINIO_DA_VPS')
+  const [sshUser, setSSHUser] = useState('ubuntu')
+  const [sshKeyPath, setSSHKeyPath] = useState('')
+  const [tunnelPort, setTunnelPort] = useState('1080')
   const [settings, setSettings] = useState<InstanceSettings | null>(null)
   const [settingsDraft, setSettingsDraft] = useState<InstanceSettings>({
     alwaysOnline: instance.alwaysOnline ?? false,
@@ -54,6 +58,11 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
     JSON.stringify([...events].sort()) !== JSON.stringify([...config.events].sort()))
   const settingsDirty = settings !== null && JSON.stringify(settingsDraft) !== JSON.stringify(settings)
   const proxyDirty = proxyURL.trim() !== ''
+  const safeSSHKeyPath = sshKeyPath.trim().replaceAll('"', '`"')
+  const tunnelTarget = `${sshUser.trim() || 'ubuntu'}@${sshHost.trim() || 'IP_OU_DOMINIO_DA_VPS'}`
+  const tunnelCommand = `ssh${safeSSHKeyPath ? ` -i "${safeSSHKeyPath}"` : ''} -N -T -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -R 127.0.0.1:${tunnelPort || '1080'} ${tunnelTarget}`
+  const tunnelTest = `curl --socks5-hostname 127.0.0.1:${tunnelPort || '1080'} https://api.ipify.org && echo`
+  const tunnelProxyURL = `socks5://127.0.0.1:${tunnelPort || '1080'}`
 
   useEffect(() => {
     const element = dialog.current!
@@ -341,6 +350,32 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
               placeholder="socks5://usuario:senha@proxy.exemplo.com:1080"
               maxLength={2048} disabled={!!busy} autoComplete="off" spellCheck={false} />
             <p className="manageHint">Compatível com HTTP, HTTPS e SOCKS5. Usuário e senha são opcionais. Alterar ou remover reconecta a instância.</p>
+            <details className="proxyGuide">
+              <summary>Como criar um proxy pelo Windows</summary>
+              <div className="proxyGuideBody">
+                <p>Crie um túnel SOCKS5 reverso: o Wirely acessa uma porta local na VPS, mas a conexão sai pela internet do seu computador. Não é necessário abrir portas no roteador.</p>
+                <div className="proxyGuideFields">
+                  <label>Usuário SSH da VPS<input value={sshUser} onChange={(event) => setSSHUser(event.target.value)} placeholder="ubuntu" disabled={!!busy} /></label>
+                  <label>IP ou domínio da VPS<input value={sshHost} onChange={(event) => setSSHHost(event.target.value)} placeholder="servidor.exemplo.com" disabled={!!busy} /></label>
+                  <label className="proxyGuideKey">Chave SSH no Windows <span>opcional</span><input value={sshKeyPath}
+                    onChange={(event) => setSSHKeyPath(event.target.value)} placeholder={'C:\\caminho\\para\\ssh-key.key'} disabled={!!busy} spellCheck={false} /></label>
+                  <label>Porta local<input type="number" min="1024" max="65535" value={tunnelPort}
+                    onChange={(event) => setTunnelPort(event.target.value)} disabled={!!busy} /></label>
+                </div>
+                <ol className="proxyGuideSteps">
+                  <li><span>Abra o PowerShell no Windows e mantenha a janela aberta.</span>
+                    <div className="proxyGuideCode"><code>{tunnelCommand}</code><button type="button" className="manageSubtleButton"
+                      onClick={() => void copy(tunnelCommand, null)}>Copiar</button></div></li>
+                  <li><span>Na VPS, confirme que o tráfego está saindo pelo IP do Windows.</span>
+                    <div className="proxyGuideCode"><code>{tunnelTest}</code><button type="button" className="manageSubtleButton"
+                      onClick={() => void copy(tunnelTest, null)}>Copiar</button></div></li>
+                  <li><span>Use este endereço no proxy da instância.</span>
+                    <div className="proxyGuideCode"><code>{tunnelProxyURL}</code><button type="button" className="manageSubtleButton"
+                      onClick={() => setProxyURL(tunnelProxyURL)}>Preencher acima</button></div></li>
+                </ol>
+                <small>Se o PowerShell for fechado, o computador desligar ou suspender, o túnel será interrompido.</small>
+              </div>
+            </details>
             <div className="manageSave">
               <span>{proxy.configured ? `${proxy.scheme?.toUpperCase()} · ${proxy.host}:${proxy.port}` : 'Conexão direta, sem proxy'}</span>
               {proxy.configured && <button type="button" className="manageSubtleButton manageProxyRemove" disabled={!!busy}
