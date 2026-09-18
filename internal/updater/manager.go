@@ -90,7 +90,7 @@ func New(currentVersion, dataDirectory string) *Manager {
 func (m *Manager) Check(ctx context.Context, refresh bool) (Status, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if !refresh && !m.cachedAt.IsZero() && time.Since(m.cachedAt) < 15*time.Minute {
+	if !refresh && !m.cachedAt.IsZero() && time.Since(m.cachedAt) < 5*time.Minute {
 		return m.cached, nil
 	}
 	rel, found, err := m.fetchRelease(ctx)

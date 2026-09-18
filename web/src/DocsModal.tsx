@@ -964,7 +964,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
       onCancel={(event) => { event.preventDefault(); onClose() }}>
       <header className="manageHeader">
         <div><p className="eyebrow">REFERÊNCIA DA API</p><h2 id="docs-title">Documentação</h2>
-          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.9.8</span></div>
+          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.9.9</span></div>
         <button className="closeButton" type="button" aria-label="Fechar documentação" onClick={onClose}>×</button>
       </header>
       <div className="docsBody">

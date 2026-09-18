@@ -238,16 +238,16 @@ function Dashboard({
   useEffect(() => {
     if (!isOwner) return
     let active = true
-    const loadUpdate = async () => {
+    const loadUpdate = async (refresh = false) => {
       try {
-        const value = await request<UpdateStatus>('/api/system/update')
+        const value = await request<UpdateStatus>(`/api/system/update${refresh ? '?refresh=1' : ''}`)
         if (active) setUpdateStatus(value)
       } catch {
         // The dashboard remains available when GitHub cannot be reached.
       }
     }
-    void loadUpdate()
-    const timer = window.setInterval(() => void loadUpdate(), 15 * 60 * 1000)
+    void loadUpdate(true)
+    const timer = window.setInterval(() => void loadUpdate(), 5 * 60 * 1000)
     return () => { active = false; window.clearInterval(timer) }
   }, [isOwner])
 
@@ -410,7 +410,7 @@ function Dashboard({
           <strong>{updateStatus.updateAvailable
             ? `Wirely v${updateStatus.latestVersion}`
             : `Wirely v${updateStatus.currentVersion}`}</strong>
-          <em>{updateStatus.updateAvailable ? 'Veja as mudanças e atualize com backup automático.' : 'Clique para verificar versões e segurança da instalação.'}</em></span>
+          <em>{updateStatus.updateAvailable ? 'Veja as mudanças e atualize com backup automático.' : 'Verificação automática de novas versões ativada.'}</em></span>
         <b>{updateStatus.updateAvailable ? 'Ver atualização' : 'Verificar'} <span aria-hidden="true">→</span></b>
       </button>}
 

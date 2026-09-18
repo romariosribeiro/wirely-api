@@ -50,6 +50,10 @@ All notable changes to Wirely API are documented here. The project follows
   red when a newer version is available.
 - The proxy manager now includes an expandable Windows SSH tunnel assistant
   that generates personalized PowerShell, VPS test, and SOCKS5 configuration commands.
+- The dashboard now performs a fresh update check when it opens, refreshes the
+  status automatically every five minutes, and rechecks when the update modal opens.
+- The Windows proxy assistant now contains long commands inside its card and
+  wraps them cleanly instead of shifting and clipping the management modal.
 
 ## [0.9.0] - 2026-09-17
 

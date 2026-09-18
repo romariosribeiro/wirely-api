@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { request, type UpdateStatus } from './api'
 
@@ -20,23 +20,27 @@ export function UpdateModal({ initial, onClose, onChanged }: Props) {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
-  useEffect(() => {
-    const element = dialog.current!
-    const previousFocus = document.activeElement as HTMLElement | null
-    element.showModal()
-    return () => { element.close(); previousFocus?.focus() }
-  }, [])
-
-  async function check() {
+  const check = useCallback(async (silent = false) => {
     setLoading(true); setError(''); setNotice('')
     try {
       const value = await request<UpdateStatus>('/api/system/update?refresh=1')
       setStatus(value); onChanged(value)
-      setNotice(value.updateAvailable ? 'Uma nova versão está disponível.' : 'Você está usando a versão mais recente.')
+      if (!silent) setNotice(value.updateAvailable ? 'Uma nova versão está disponível.' : 'Você está usando a versão mais recente.')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Não foi possível verificar atualizações.')
     } finally { setLoading(false) }
-  }
+  }, [onChanged])
+
+  useEffect(() => {
+    const element = dialog.current!
+    const previousFocus = document.activeElement as HTMLElement | null
+    element.showModal()
+    const refreshTimer = window.setTimeout(() => void check(true), 0)
+    return () => {
+      window.clearTimeout(refreshTimer)
+      element.close(); previousFocus?.focus()
+    }
+  }, [check])
 
   async function apply() {
     if (!window.confirm(`Criar um backup e atualizar para ${version(status.latestVersion)}? O Wirely reiniciará automaticamente.`)) return
