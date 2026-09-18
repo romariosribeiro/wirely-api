@@ -20,7 +20,8 @@ All notable changes to Wirely API are documented here. The project follows
 - Short `POST /api/auth/login` endpoint for creating administrative sessions,
   with cookie-based examples in the API documentation.
 - Complete instance lifecycle API for Bearer-authenticated details, connection,
-  disconnection, logout, phone pairing, proxy removal, QR Code, and status.
+  disconnection, logout, phone pairing, encrypted proxy configuration, QR Code,
+  and status.
 - Batch `POST /api/contacts/check` validation for up to 100 WhatsApp numbers.
 - Persistent, restart-safe webhook delivery queue with event-ID idempotency.
 - Bearer-authenticated webhook test, job status, and delivery-history endpoints.

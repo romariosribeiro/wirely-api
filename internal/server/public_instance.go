@@ -320,15 +320,29 @@ func (s *Server) publicDeleteInstanceProxy(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
-	if s.engine == nil {
-		writeError(w, http.StatusServiceUnavailable, "WhatsApp engine is unavailable")
-		return
-	}
-	if err := s.engine.ClearProxy(instanceID); err != nil {
+	if err := s.clearInstanceProxy(r.Context(), instanceID); err != nil {
 		writeError(w, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) publicSetInstanceProxy(w http.ResponseWriter, r *http.Request) {
+	instanceID, ok := s.authenticateInstanceRequest(w, r)
+	if !ok {
+		return
+	}
+	var payload proxyRequest
+	if decodeJSON(w, r, &payload) != nil {
+		writeError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	result, err := s.saveInstanceProxy(r.Context(), instanceID, payload.URL)
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
 }
 
 func (s *Server) publicInstanceQR(w http.ResponseWriter, r *http.Request) {

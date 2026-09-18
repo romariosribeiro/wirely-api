@@ -38,6 +38,7 @@ written in Go and the panel uses React, TypeScript, and Vite.
 - Integrated API reference with cURL, Laravel, Node.js, and Python examples
 - OpenAPI 3.1 specification at `GET /openapi.json`
 - Instance management modal with tokens, filtered webhooks, disconnect and delete
+- Encrypted HTTP, HTTPS, or SOCKS5 proxy configuration per instance
 - Per-instance signed webhooks with automatic retries and delivery logs
 - Per-instance activity history with filters, pagination, live refresh, and manual retry
 - Administrator inbox with WhatsApp contacts, unread counters, chat history, and direct or group replies
@@ -469,6 +470,9 @@ requests reuse the HttpOnly session cookie.
 | `POST` | `/api/instances` | Create an instance and its first token |
 | `GET` | `/api/instances/{id}/settings` | Read instance behavior settings |
 | `PUT` | `/api/instances/{id}/settings` | Update online, call, read, group, and Status behavior |
+| `GET` | `/api/instances/{id}/proxy` | Read the masked proxy configuration |
+| `PUT` | `/api/instances/{id}/proxy` | Save and apply an instance proxy |
+| `DELETE` | `/api/instances/{id}/proxy` | Remove an instance proxy |
 | `DELETE` | `/api/instances/{id}` | Permanently delete an instance |
 
 All remaining operations use the instance Bearer token, which means an
@@ -481,6 +485,7 @@ integration never sends an instance ID:
 | `POST` | `/api/instance/disconnect` | Disconnect without unlinking |
 | `DELETE` | `/api/instance/logout` | Unlink the WhatsApp account |
 | `POST` | `/api/instance/pair` | Request a phone pairing code |
+| `PUT` | `/api/instance/proxy` | Save and apply an HTTP, HTTPS, or SOCKS5 proxy |
 | `DELETE` | `/api/instance/proxy` | Clear the active proxy |
 | `GET` | `/api/instance/qr` | Download the current QR Code as PNG |
 | `GET` | `/api/instance/qr?format=base64` | Read the QR Code as Base64 JSON |
@@ -534,6 +539,24 @@ curl -X POST 'http://localhost:8080/api/instance/pair' \
 New pairings identify the linked device as **Google Chrome**. Existing WhatsApp
 linked-device entries keep their original name until the instance is logged out
 and paired again.
+
+Configure a proxy for only the authenticated instance:
+
+```bash
+curl -X PUT 'http://localhost:8080/api/instance/proxy' \
+  -H 'Authorization: Bearer wly_your_token' \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"socks5://user:password@proxy.example:1080"}'
+```
+
+The schemes `http`, `https`, and `socks5` are supported. Credentials are
+optional, encrypted at rest, and never returned in plain text. Saving or
+removing a proxy reconnects an active instance. Remove it with:
+
+```bash
+curl -X DELETE 'http://localhost:8080/api/instance/proxy' \
+  -H 'Authorization: Bearer wly_your_token'
+```
 
 Check up to 100 numbers before sending a message:
 

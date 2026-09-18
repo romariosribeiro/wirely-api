@@ -6,7 +6,7 @@ type JSONEndpoint = 'text' | 'location' | 'contact' | 'poll' | 'reaction'
 type Endpoint = JSONEndpoint | MediaEndpoint
 type GroupEndpoint = 'list' | 'create' | 'join' | 'details' | 'rename' | 'participants' | 'invite' | 'rotate-invite'
 type ProfileEndpoint = 'get-profile' | 'update-profile' | 'set-photo' | 'delete-photo' | 'get-privacy' | 'update-privacy'
-type InstanceEndpoint = 'login' | 'all' | 'create' | 'settings' | 'delete' | 'details' | 'connect' | 'disconnect' | 'logout' | 'pair' | 'proxy' | 'qr' | 'status' | 'check'
+type InstanceEndpoint = 'login' | 'all' | 'create' | 'settings' | 'delete' | 'details' | 'connect' | 'disconnect' | 'logout' | 'pair' | 'proxy-set' | 'proxy-delete' | 'qr' | 'status' | 'check'
 type MessageActionEndpoint = 'delete-message' | 'edit-message' | 'mark-read' | 'message-status' | 'archive-chat' | 'mute-chat' | 'pin-chat' | 'unpin-chat'
 type OrganizationEndpoint = 'create-newsletter' | 'get-newsletter' | 'invite-newsletter' | 'list-newsletters' | 'newsletter-messages' | 'subscribe-newsletter' | 'add-chat-label' | 'edit-label' | 'add-message-label' | 'remove-chat-label' | 'remove-message-label' | 'add-community-groups' | 'create-community' | 'remove-community-groups'
 type Language = 'curl' | 'laravel' | 'node' | 'python'
@@ -32,7 +32,8 @@ const instanceEndpoints: InstanceEndpointInfo[] = [
   { id: 'disconnect', method: 'POST', path: '/api/instance/disconnect', title: 'Desconectar', description: 'Desconecta sem remover o pareamento existente.' },
   { id: 'logout', method: 'DELETE', path: '/api/instance/logout', title: 'Logout', description: 'Desvincula a conta e apaga o pareamento local.' },
   { id: 'pair', method: 'POST', path: '/api/instance/pair', title: 'Código de pareamento', description: 'Gera um código temporário usando telefone internacional sem +.', body: '{"phone":"5511999999999"}' },
-  { id: 'proxy', method: 'DELETE', path: '/api/instance/proxy', title: 'Remover proxy', description: 'Limpa o proxy em uso e reconecta o cliente quando necessário.' },
+  { id: 'proxy-set', method: 'PUT', path: '/api/instance/proxy', title: 'Configurar proxy', description: 'Salva e aplica um proxy HTTP, HTTPS ou SOCKS5 nesta instância. Usuário e senha são opcionais.', body: '{"url":"socks5://usuario:senha@proxy.exemplo.com:1080"}' },
+  { id: 'proxy-delete', method: 'DELETE', path: '/api/instance/proxy', title: 'Remover proxy', description: 'Remove o proxy salvo e reconecta a instância diretamente.' },
   { id: 'qr', method: 'GET', path: '/api/instance/qr?format=base64', title: 'Obter QR Code', description: 'Retorna PNG ou JSON Base64 com format=base64.' },
   { id: 'status', method: 'GET', path: '/api/instance/status', title: 'Status', description: 'Retorna o estado atual, disponibilidade e validade do QR Code.' },
   { id: 'check', method: 'POST', path: '/api/contacts/check', title: 'Verificar contatos', description: 'Verifica até 100 telefones e retorna quais possuem WhatsApp.', body: '{"phones":["5511999999999","5511888888888"]}' },
@@ -963,7 +964,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
       onCancel={(event) => { event.preventDefault(); onClose() }}>
       <header className="manageHeader">
         <div><p className="eyebrow">REFERÊNCIA DA API</p><h2 id="docs-title">Documentação</h2>
-          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.9.0</span></div>
+          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.9.4</span></div>
         <button className="closeButton" type="button" aria-label="Fechar documentação" onClick={onClose}>×</button>
       </header>
       <div className="docsBody">

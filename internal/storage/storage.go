@@ -303,6 +303,7 @@ WHERE event LIKE 'message.%'
 		"ALTER TABLE instances ADD COLUMN read_messages INTEGER NOT NULL DEFAULT 0",
 		"ALTER TABLE instances ADD COLUMN ignore_groups INTEGER NOT NULL DEFAULT 0",
 		"ALTER TABLE instances ADD COLUMN ignore_status INTEGER NOT NULL DEFAULT 0",
+		"ALTER TABLE instances ADD COLUMN proxy_ciphertext TEXT NOT NULL DEFAULT ''",
 	} {
 		if _, err := s.db.ExecContext(ctx, migration); err != nil &&
 			!strings.Contains(strings.ToLower(err.Error()), "duplicate column name") {

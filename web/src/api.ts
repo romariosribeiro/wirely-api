@@ -56,6 +56,16 @@ export type WebhookConfig = {
   events: string[]
 }
 
+export type ProxyConfig = {
+  configured: boolean
+  url?: string
+  scheme?: 'http' | 'https' | 'socks5'
+  host?: string
+  port?: string
+  username?: string
+  hasPassword: boolean
+}
+
 export type Contact = {
   jid: string
   name: string

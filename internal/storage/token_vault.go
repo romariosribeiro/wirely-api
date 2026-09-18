@@ -73,12 +73,32 @@ func (s *Store) openTokenVault(directory string) error {
 }
 
 func (s *Store) encryptInstanceToken(id, token string) (string, error) {
+	return s.encryptInstanceSecret(id, "token", token)
+}
+
+func (s *Store) encryptInstanceSecret(id, purpose, value string) (string, error) {
 	nonce := make([]byte, s.tokenCipher.NonceSize())
 	if _, err := rand.Read(nonce); err != nil {
 		return "", err
 	}
-	sealed := s.tokenCipher.Seal(nonce, nonce, []byte(token), []byte("wirely:instance-token:v1:"+id))
+	sealed := s.tokenCipher.Seal(nonce, nonce, []byte(value), []byte("wirely:instance-"+purpose+":v1:"+id))
 	return base64.RawStdEncoding.EncodeToString(sealed), nil
+}
+
+func (s *Store) decryptInstanceSecret(id, purpose, encoded string) (string, error) {
+	if encoded == "" {
+		return "", nil
+	}
+	sealed, err := base64.RawStdEncoding.DecodeString(encoded)
+	if err != nil || len(sealed) < s.tokenCipher.NonceSize()+s.tokenCipher.Overhead() {
+		return "", errors.New("invalid encrypted secret")
+	}
+	n := s.tokenCipher.NonceSize()
+	plain, err := s.tokenCipher.Open(nil, sealed[:n], sealed[n:], []byte("wirely:instance-"+purpose+":v1:"+id))
+	if err != nil {
+		return "", errors.New("cannot decrypt secret: check the original token.key")
+	}
+	return string(plain), nil
 }
 
 // GetInstanceToken is for authenticated administrators only, never list/auth responses.
@@ -92,17 +112,5 @@ func (s *Store) GetInstanceToken(ctx context.Context, id string) (string, error)
 	if err != nil {
 		return "", fmt.Errorf("read encrypted token: %w", err)
 	}
-	if encoded == "" {
-		return "", nil
-	}
-	sealed, err := base64.RawStdEncoding.DecodeString(encoded)
-	if err != nil || len(sealed) < s.tokenCipher.NonceSize()+s.tokenCipher.Overhead() {
-		return "", errors.New("invalid encrypted token")
-	}
-	n := s.tokenCipher.NonceSize()
-	plain, err := s.tokenCipher.Open(nil, sealed[:n], sealed[n:], []byte("wirely:instance-token:v1:"+id))
-	if err != nil {
-		return "", errors.New("cannot decrypt token: check the original token.key")
-	}
-	return string(plain), nil
+	return s.decryptInstanceSecret(id, "token", encoded)
 }

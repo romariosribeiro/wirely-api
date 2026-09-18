@@ -200,6 +200,12 @@ dialog[open] { animation: modalIn .2s ease-out; }
 .manageSave { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 .manageSave > span { flex: 1; color: var(--muted); font-size: 10px; }
 .manageSave .textButton { font-size: 10px; }
+.manageProxyBadge { padding: 4px 7px; border: 1px solid #82d6b43b; border-radius: 999px; color: #8fddbd; background: #82d6b40d; font-size: 9px; letter-spacing: .08em; }
+.manageProxyCurrent { margin: 10px 0 14px; padding: 11px 12px; border: 1px solid #2b3342; border-radius: 8px; background: #0d1016; }
+.manageProxyCurrent > span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
+.manageProxyCurrent code { display: block; overflow: hidden; color: #cbd5e7; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.manageProxyCurrent small { margin-top: 5px; }
+.manageProxyRemove { color: #efa3ac; }
 .manageBehaviorGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0 16px; }
 .manageBehavior { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 12px; border: 1px solid #272e3b; border-radius: 8px; background: #0d1016; cursor: pointer; }
 .manageBehavior:last-child { grid-column: 1 / -1; }

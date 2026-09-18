@@ -268,12 +268,18 @@ func (m *Manager) PairPhone(ctx context.Context, id, phone string) (string, erro
 }
 
 func (m *Manager) ClearProxy(id string) error {
+	return m.SetProxy(id, "")
+}
+
+func (m *Manager) SetProxy(id, address string) error {
 	current, err := m.get(id)
 	if err != nil {
-		return err
+		return nil
 	}
 	wasConnected := current.client.IsConnected()
-	current.client.SetProxy(nil)
+	if err := current.client.SetProxyAddress(address); err != nil {
+		return fmt.Errorf("configure proxy: %w", err)
+	}
 	if wasConnected {
 		current.client.Disconnect()
 		return m.Connect(id)
@@ -467,6 +473,17 @@ func (m *Manager) ensure(ctx context.Context, id string) (*session, error) {
 	current := &session{
 		id: id, client: whatsmeow.NewClient(device, nil), container: container,
 		cancel: cancel, status: "disconnected", settings: instance.InstanceSettings,
+	}
+	proxyAddress, err := m.store.GetInstanceProxy(ctx, id)
+	if err != nil {
+		cancel()
+		_ = container.Close()
+		return nil, err
+	}
+	if err := current.client.SetProxyAddress(proxyAddress); err != nil {
+		cancel()
+		_ = container.Close()
+		return nil, fmt.Errorf("configure instance proxy: %w", err)
 	}
 	current.client.AddEventHandler(func(event any) {
 		m.handleEvent(current, event)

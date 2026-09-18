@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { request, statusLabel, type Instance, type InstanceSettings, type WebhookConfig } from './api'
+import { request, statusLabel, type Instance, type InstanceSettings, type ProxyConfig, type WebhookConfig } from './api'
 
 const eventOptions = [
   { id: 'messages', title: 'Mensagens · todos os eventos', description: 'Recebidas, enviadas, edições, exclusões, reações e confirmações de entrega/leitura.' },
@@ -38,6 +38,8 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [loadVersion, setLoadVersion] = useState(0)
+  const [proxy, setProxy] = useState<ProxyConfig | null>(null)
+  const [proxyURL, setProxyURL] = useState('')
   const [settings, setSettings] = useState<InstanceSettings | null>(null)
   const [settingsDraft, setSettingsDraft] = useState<InstanceSettings>({
     alwaysOnline: instance.alwaysOnline ?? false,
@@ -51,6 +53,7 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
   const dirty = config !== null && (url !== config.url || enabled !== config.enabled ||
     JSON.stringify([...events].sort()) !== JSON.stringify([...config.events].sort()))
   const settingsDirty = settings !== null && JSON.stringify(settingsDraft) !== JSON.stringify(settings)
+  const proxyDirty = proxyURL.trim() !== ''
 
   useEffect(() => {
     const element = dialog.current!
@@ -98,9 +101,19 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
     return () => { active = false }
   }, [endpoint])
 
+  useEffect(() => {
+    let active = true
+    request<ProxyConfig>(`${endpoint}/proxy`).then((value) => {
+      if (active) setProxy(value)
+    }).catch((reason) => {
+      if (active) setError(reason instanceof Error ? reason.message : 'Falha ao carregar proxy.')
+    })
+    return () => { active = false }
+  }, [endpoint])
+
   function close() {
     if (busy) return
-    if ((dirty || settingsDirty) && !window.confirm('Descartar as alterações não salvas?')) return
+    if ((dirty || settingsDirty || proxyDirty) && !window.confirm('Descartar as alterações não salvas?')) return
     onClose()
   }
 
@@ -165,6 +178,35 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
       setNotice('Comportamento da instância atualizado.')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Falha ao salvar configurações.')
+    } finally { setBusy('') }
+  }
+
+  async function saveProxy(event: FormEvent) {
+    event.preventDefault()
+    if (proxy?.configured && !window.confirm('Trocar o proxy reconectará a instância. Continuar?')) return
+    setBusy('proxy'); setError(''); setNotice('')
+    try {
+      const result = await request<ProxyConfig>(`${endpoint}/proxy`, {
+        method: 'PUT', body: JSON.stringify({ url: proxyURL.trim() }),
+      })
+      setProxy(result)
+      setProxyURL('')
+      setNotice('Proxy salvo e aplicado à instância.')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Falha ao salvar proxy.')
+    } finally { setBusy('') }
+  }
+
+  async function removeProxy() {
+    if (!window.confirm('Remover o proxy? A instância será reconectada diretamente.')) return
+    setBusy('proxy'); setError(''); setNotice('')
+    try {
+      await request<void>(`${endpoint}/proxy`, { method: 'DELETE' })
+      setProxy({ configured: false, hasPassword: false })
+      setProxyURL('')
+      setNotice('Proxy removido. A conexão direta foi restaurada.')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Falha ao remover proxy.')
     } finally { setBusy('') }
   }
 
@@ -280,6 +322,34 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
               </div>
             </>
           )}
+        </form>
+
+        <form className="manageSection" onSubmit={(event) => void saveProxy(event)}>
+          <div className="manageSectionHeading">
+            <div><h3>Proxy da conexão</h3><p>Defina um proxy exclusivo para esta instância.</p></div>
+            {proxy?.configured && <span className="manageProxyBadge">ATIVO</span>}
+          </div>
+          {!proxy ? <div className="inlineLoading" role="status"><span className="spinner" aria-hidden="true" />Carregando proxy…</div> : <>
+            {proxy.configured && <div className="manageProxyCurrent">
+              <span>Proxy atual</span>
+              <code>{proxy.url}</code>
+              <small>A senha é protegida e aparece mascarada.</small>
+            </div>}
+            <label className="manageLabel" htmlFor="manage-proxy-url">{proxy.configured ? 'Novo endereço do proxy' : 'Endereço do proxy'}</label>
+            <input className="manageURL" id="manage-proxy-url" type="text" value={proxyURL}
+              onChange={(event) => setProxyURL(event.target.value)}
+              placeholder="socks5://usuario:senha@proxy.exemplo.com:1080"
+              maxLength={2048} disabled={!!busy} autoComplete="off" spellCheck={false} />
+            <p className="manageHint">Compatível com HTTP, HTTPS e SOCKS5. Usuário e senha são opcionais. Alterar ou remover reconecta a instância.</p>
+            <div className="manageSave">
+              <span>{proxy.configured ? `${proxy.scheme?.toUpperCase()} · ${proxy.host}:${proxy.port}` : 'Conexão direta, sem proxy'}</span>
+              {proxy.configured && <button type="button" className="textButton manageProxyRemove" disabled={!!busy}
+                onClick={() => void removeProxy()}>Remover proxy</button>}
+              <button className="primaryButton" type="submit" disabled={!!busy || !proxyDirty} aria-busy={busy === 'proxy'}>
+                {busy === 'proxy' ? 'Aplicando…' : proxy.configured ? 'Trocar proxy' : 'Salvar proxy'}
+              </button>
+            </div>
+          </>}
         </form>
 
         <form className="manageSection" onSubmit={(event) => void saveSettings(event)}>

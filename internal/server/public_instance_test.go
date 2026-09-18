@@ -78,15 +78,17 @@ func TestPublicInstanceOperationsRequireBearer(t *testing.T) {
 		method string
 		path   string
 		body   string
+		status int
 	}{
-		{http.MethodPost, "/api/instance/connect", ""},
-		{http.MethodPost, "/api/instance/disconnect", ""},
-		{http.MethodDelete, "/api/instance/logout", ""},
-		{http.MethodPost, "/api/instance/pair", `{"phone":"5511999999999"}`},
-		{http.MethodDelete, "/api/instance/proxy", ""},
-		{http.MethodGet, "/api/instance/qr", ""},
-		{http.MethodGet, "/api/instance/status", ""},
-		{http.MethodPost, "/api/contacts/check", `{"phones":["5511999999999"]}`},
+		{http.MethodPost, "/api/instance/connect", "", 0},
+		{http.MethodPost, "/api/instance/disconnect", "", 0},
+		{http.MethodDelete, "/api/instance/logout", "", 0},
+		{http.MethodPost, "/api/instance/pair", `{"phone":"5511999999999"}`, 0},
+		{http.MethodPut, "/api/instance/proxy", `{"url":"socks5://proxy.example:1080"}`, http.StatusOK},
+		{http.MethodDelete, "/api/instance/proxy", "", http.StatusNoContent},
+		{http.MethodGet, "/api/instance/qr", "", 0},
+		{http.MethodGet, "/api/instance/status", "", 0},
+		{http.MethodPost, "/api/contacts/check", `{"phones":["5511999999999"]}`, 0},
 	}
 	for _, test := range tests {
 		request := httptest.NewRequest(test.method, test.path, strings.NewReader(test.body))
@@ -100,7 +102,11 @@ func TestPublicInstanceOperationsRequireBearer(t *testing.T) {
 		authorized.Header.Set("Authorization", "Bearer "+instance.APIToken)
 		authorizedResponse := httptest.NewRecorder()
 		app.Handler().ServeHTTP(authorizedResponse, authorized)
-		if authorizedResponse.Code != http.StatusServiceUnavailable {
+		expected := test.status
+		if expected == 0 {
+			expected = http.StatusServiceUnavailable
+		}
+		if authorizedResponse.Code != expected {
 			t.Errorf("%s %s was not registered: got %d %s", test.method, test.path, authorizedResponse.Code, authorizedResponse.Body.String())
 		}
 	}
