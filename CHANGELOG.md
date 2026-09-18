@@ -42,6 +42,8 @@ All notable changes to Wirely API are documented here. The project follows
 
 - Administrative and panel endpoints now use the concise `/api/` prefix across
   the server, frontend, OpenAPI, and documentation.
+- Instance cards now show only the creation date, without exposing the internal
+  WhatsApp engine name.
 
 ## [0.9.0] - 2026-09-17
 

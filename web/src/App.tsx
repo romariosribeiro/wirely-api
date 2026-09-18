@@ -433,7 +433,7 @@ function Dashboard({
                   <span className="instanceAvatar">{instance.name.slice(0, 1).toUpperCase()}</span>
                   <div>
                     <h3>{instance.name}</h3>
-                    <small>{instance.engine} · criada em {new Date(instance.createdAt).toLocaleDateString('pt-BR')}</small>
+                    <small>Criada em {new Date(instance.createdAt).toLocaleDateString('pt-BR')}</small>
                   </div>
                 </div>
                 <div className="instanceActions">
