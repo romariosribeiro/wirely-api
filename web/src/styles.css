@@ -39,6 +39,11 @@ p { line-height: 1.65; }
 .currentUser { display: grid; gap: 1px; min-width: 0; margin: 0 2px 0 5px; padding-left: 10px; border-left: 1px solid #272d38; line-height: 1.2; }
 .currentUser b { max-width: 100px; overflow: hidden; color: #cbd2df; font-size: 10px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .currentUser small { color: #7f899a; font-size: 8px; }
+.languageSwitch { display: inline-flex; padding: 2px; border: 1px solid #2d3441; border-radius: 7px; background: #0d1016; }
+.languageSwitch button { min-width: 28px; height: 25px; padding: 0 7px; border: 0; border-radius: 5px; color: #747f91; background: transparent; font-size: 9px; font-weight: 650; letter-spacing: .05em; }
+.languageSwitch button:hover { color: #dce2ec; }
+.languageSwitch button.active { color: #17213d; background: #aebeff; box-shadow: 0 1px 4px #0003; }
+.languageSwitch button:focus-visible { outline-offset: 2px; }
 .status { display: inline-flex; align-items: center; gap: 7px; color: #a4adbb; font-size: 11px; white-space: nowrap; }
 .status::before, .badge::before, .qrAutoRefresh > span { content: ""; width: 5px; height: 5px; flex: 0 0 5px; border-radius: 50%; background: currentColor; }
 .status.online::before { background: #76c9a7; box-shadow: 0 0 0 3px #76c9a70c; }
@@ -269,6 +274,7 @@ dialog[open] { animation: modalIn .2s ease-out; }
   .topActions { gap: 0; }
   .topActions .status, .currentUser { display: none; }
   .textButton { font-size: 11px; }
+  .languageSwitch button { min-width: 25px; padding: 0 5px; }
   .pageHeading { padding: 28px 0 22px; }
   h1 { font-size: 27px; }
   .pageHeading > div > p:last-child { font-size: 12px; }

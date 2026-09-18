@@ -1,4 +1,4 @@
 package buildinfo
 
 // Version is replaced with the release tag by the release workflow.
-var Version = "0.9.9"
+var Version = "0.10.0"

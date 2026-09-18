@@ -7,6 +7,10 @@ All notable changes to Wirely API are documented here. The project follows
 
 ### Added
 
+- Portuguese and English panel localization with a persistent PT/EN selector,
+  keeping Portuguese as the default language.
+- Updated project screenshots for the English dashboard, instance manager, and
+  API documentation.
 - Complete newsletter API for creation, metadata and invite lookup, listing,
   message history, and subscription.
 - Label editing and reversible label associations for chats and messages.

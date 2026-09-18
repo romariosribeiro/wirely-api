@@ -9,15 +9,15 @@ written in Go and the panel uses React, TypeScript, and Vite.
 
 ### Dashboard
 
-![Wirely API dashboard](docs/images/wirely-dashboard.png)
+![Wirely API dashboard in English](docs/images/wirely-dashboard-en.png)
+
+### Instance management
+
+![Wirely API instance management in English](docs/images/wirely-manage-en.png)
 
 ### API documentation
 
-![Wirely API documentation](docs/images/wirely-documentation.png)
-
-### Login
-
-![Wirely API login](docs/images/wirely-login.png)
+![Wirely API documentation in English](docs/images/wirely-documentation-en.png)
 
 ## Current features
 
@@ -52,6 +52,7 @@ written in Go and the panel uses React, TypeScript, and Vite.
 - Health endpoint at `GET /api/health`
 - Shell installer and hardened systemd service
 - Dashboard update card with release notes, automatic backup, SHA-256 verification, and binary rollback
+- Portuguese and English panel with a persistent PT/EN selector (Portuguese by default)
 
 ## Requirements for development
 

@@ -12,6 +12,7 @@ import { UsersModal } from './UsersModal'
 import { MetricsModal } from './MetricsModal'
 import { OperationsModal } from './OperationsModal'
 import { UpdateModal } from './UpdateModal'
+import { useLanguage } from './i18n'
 
 const roleLabels: Record<UserRole, string> = { owner: 'Proprietário', admin: 'Administrador', operator: 'Operador', viewer: 'Visualizador' }
 
@@ -188,6 +189,7 @@ function Dashboard({
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
   const canAdmin = can(user, 'admin')
   const canOperate = can(user, 'operator')
+  const { language, setLanguage } = useLanguage()
   const isOwner = user.role === 'owner'
 
   const loadInstances = useCallback(async () => {
@@ -353,6 +355,12 @@ function Dashboard({
           {isOwner && <button className="textButton" type="button" onClick={() => setUsersOpen(true)}>Equipe</button>}
           <button className="textButton" type="button" onClick={() => setPasswordModalOpen(true)}>Segurança</button>
           <span className="currentUser" title={roleLabels[user.role]}><b>{user.username}</b><small>{roleLabels[user.role]}</small></span>
+          <div className="languageSwitch" role="group" aria-label="Idioma do painel">
+            <button type="button" className={language === 'pt' ? 'active' : ''} aria-pressed={language === 'pt'}
+              onClick={() => setLanguage('pt')}>PT</button>
+            <button type="button" className={language === 'en' ? 'active' : ''} aria-pressed={language === 'en'}
+              onClick={() => setLanguage('en')}>EN</button>
+          </div>
           <button className="textButton" type="button" onClick={onLogout}>Sair</button>
         </div>
       </header>
@@ -433,7 +441,7 @@ function Dashboard({
                   <span className="instanceAvatar">{instance.name.slice(0, 1).toUpperCase()}</span>
                   <div>
                     <h3>{instance.name}</h3>
-                    <small>Criada em {new Date(instance.createdAt).toLocaleDateString('pt-BR')}</small>
+                    <small>Criada em {new Date(instance.createdAt).toLocaleDateString(language === 'en' ? 'en-US' : 'pt-BR')}</small>
                   </div>
                 </div>
                 <div className="instanceActions">
