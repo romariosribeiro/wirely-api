@@ -38,6 +38,7 @@ func TestOpenAPISpec(t *testing.T) {
 			"/api/newsletters", "/api/newsletters/info", "/api/newsletters/invite", "/api/newsletters/messages", "/api/newsletters/subscribe",
 			"/api/labels/chat", "/api/labels/message", "/api/labels/{labelID}", "/api/communities", "/api/communities/groups",
 			"/api/instance", "/api/instance/connect", "/api/instance/disconnect", "/api/instance/logout", "/api/instance/pair", "/api/instance/proxy", "/api/instance/qr", "/api/instance/status", "/api/contacts/check",
+			"/api/user/avatar", "/api/user/block", "/api/user/blocklist", "/api/user/contacts", "/api/user/info", "/api/user/unblock",
 			"/api/webhook/test", "/api/webhook/jobs/{eventID}", "/api/webhook/deliveries",
 			"/api/groups", "/api/groups/join", "/api/groups/{groupJID}", "/api/groups/{groupJID}/participants", "/api/groups/{groupJID}/invite", "/api/profile", "/api/profile/photo", "/api/profile/privacy",
 			"/api/queue/text", "/api/queue/media", "/api/queue/{jobID}", "/api/queue/{jobID}/retry",
@@ -75,6 +76,7 @@ func TestOpenAPISpec(t *testing.T) {
 			schemas["Instance"] == nil || schemas["ConnectionState"] == nil || schemas["AuditEntry"] == nil || schemas["Backup"] == nil || schemas["Alert"] == nil ||
 			schemas["ReceivedMediaMetadata"] == nil || schemas["ReceivedMediaBase64"] == nil || schemas["WebhookJob"] == nil || schemas["WebhookAccepted"] == nil ||
 			schemas["PairInstanceRequest"] == nil || schemas["PairInstanceResponse"] == nil || schemas["ContactCheckRequest"] == nil || schemas["ContactCheck"] == nil ||
+			schemas["UserNumberRequest"] == nil || schemas["UserAvatarRequest"] == nil || schemas["UserInfoRequest"] == nil || schemas["UserAvatar"] == nil || schemas["Blocklist"] == nil || schemas["WhatsAppUser"] == nil ||
 			schemas["ConnectInstanceRequest"] == nil || schemas["ConnectInstanceResponse"] == nil ||
 			schemas["DeleteMessageRequest"] == nil || schemas["EditMessageRequest"] == nil || schemas["MarkMessagesReadRequest"] == nil || schemas["MessageStatus"] == nil || schemas["ChatActionResult"] == nil {
 			t.Fatal("missing queue or team schemas")

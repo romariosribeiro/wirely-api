@@ -68,6 +68,13 @@ type ProfileManager interface {
 	SetPrivacySetting(context.Context, string, string, string) (engine.PrivacySettings, error)
 }
 
+type UserManager interface {
+	GetUserAvatar(context.Context, string, string, bool) (engine.UserAvatar, error)
+	GetBlocklist(context.Context, string) ([]engine.BlockedUser, error)
+	SetContactBlocked(context.Context, string, string, bool) ([]engine.BlockedUser, error)
+	GetUsers(context.Context, string, []string) ([]engine.UserDetails, error)
+}
+
 type GroupManager interface {
 	ListGroups(context.Context, string) ([]engine.Group, error)
 	GetGroup(context.Context, string, string) (engine.Group, error)
@@ -135,6 +142,7 @@ type Dependencies struct {
 	Presence       ChatPresenceSender
 	Groups         GroupManager
 	Profile        ProfileManager
+	WhatsAppUsers  UserManager
 	Webhooks       WebhookRetrier
 	Contacts       ContactProvider
 	ChatSender     ChatMessageSender
@@ -158,6 +166,7 @@ type Server struct {
 	presence       ChatPresenceSender
 	groups         GroupManager
 	profile        ProfileManager
+	whatsAppUsers  UserManager
 	webhooks       WebhookRetrier
 	webhookTester  WebhookTester
 	contacts       ContactProvider
@@ -185,6 +194,7 @@ func New(dependencies Dependencies) *Server {
 	presence := dependencies.Presence
 	groups := dependencies.Groups
 	profile := dependencies.Profile
+	whatsAppUsers := dependencies.WhatsAppUsers
 	if sender == nil && dependencies.Engine != nil {
 		sender = dependencies.Engine
 	}
@@ -196,6 +206,9 @@ func New(dependencies Dependencies) *Server {
 	}
 	if profile == nil && dependencies.Engine != nil {
 		profile = dependencies.Engine
+	}
+	if whatsAppUsers == nil && dependencies.Engine != nil {
+		whatsAppUsers = dependencies.Engine
 	}
 	if presence == nil && dependencies.Engine != nil {
 		presence = dependencies.Engine
@@ -223,7 +236,7 @@ func New(dependencies Dependencies) *Server {
 		}
 	}
 	webhookTester, _ := dependencies.Webhooks.(WebhookTester)
-	server := &Server{store: dependencies.Store, engine: dependencies.Engine, connector: connector, sender: sender, structured: structured, presence: presence, groups: groups, profile: profile, webhooks: dependencies.Webhooks, webhookTester: webhookTester,
+	server := &Server{store: dependencies.Store, engine: dependencies.Engine, connector: connector, sender: sender, structured: structured, presence: presence, groups: groups, profile: profile, whatsAppUsers: whatsAppUsers, webhooks: dependencies.Webhooks, webhookTester: webhookTester,
 		contacts: contacts, chatSender: chatSender, receivedMedia: receivedMedia, messageActions: messageActions, organization: organization, queue: dependencies.Queue, secureCookies: dependencies.SecureCookies, startedAt: time.Now(),
 		limiter: newRateLimiter(dependencies.RateLimit, time.Minute), backups: dependencies.Backups, updates: dependencies.Updates, restart: dependencies.Restart,
 		httpMetrics: newHTTPMetrics()}
@@ -272,6 +285,12 @@ func New(dependencies Dependencies) *Server {
 	mux.HandleFunc("GET /api/instance/qr", server.publicInstanceQR)
 	mux.HandleFunc("GET /api/instance/status", server.publicInstanceStatus)
 	mux.HandleFunc("POST /api/contacts/check", server.publicCheckContacts)
+	mux.HandleFunc("POST /api/user/avatar", server.publicGetUserAvatar)
+	mux.HandleFunc("POST /api/user/block", server.publicSetContactBlocked(true))
+	mux.HandleFunc("GET /api/user/blocklist", server.publicGetBlocklist)
+	mux.HandleFunc("GET /api/user/contacts", server.publicGetUserContacts)
+	mux.HandleFunc("POST /api/user/info", server.publicGetUsers)
+	mux.HandleFunc("POST /api/user/unblock", server.publicSetContactBlocked(false))
 	mux.HandleFunc("POST /api/webhook/test", server.publicTestWebhook)
 	mux.HandleFunc("GET /api/webhook/deliveries", server.publicListWebhookDeliveries)
 	mux.HandleFunc("GET /api/webhook/jobs/{eventID}", server.publicGetWebhookJob)

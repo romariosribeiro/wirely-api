@@ -5,7 +5,7 @@ type MediaEndpoint = 'image' | 'video' | 'audio' | 'document' | 'sticker'
 type JSONEndpoint = 'text' | 'location' | 'contact' | 'poll' | 'reaction'
 type Endpoint = JSONEndpoint | MediaEndpoint
 type GroupEndpoint = 'list' | 'create' | 'join' | 'details' | 'rename' | 'participants' | 'invite' | 'rotate-invite'
-type ProfileEndpoint = 'get-profile' | 'update-profile' | 'set-photo' | 'delete-photo' | 'get-privacy' | 'update-privacy'
+type ProfileEndpoint = 'user-avatar' | 'block-contact' | 'blocklist' | 'check-user' | 'user-contacts' | 'user-info' | 'unblock-contact' | 'get-profile' | 'update-profile' | 'set-photo' | 'delete-photo' | 'get-privacy' | 'update-privacy'
 type InstanceEndpoint = 'login' | 'all' | 'create' | 'settings' | 'delete' | 'details' | 'connect' | 'disconnect' | 'logout' | 'pair' | 'proxy-set' | 'proxy-delete' | 'qr' | 'status' | 'check'
 type MessageActionEndpoint = 'delete-message' | 'edit-message' | 'mark-read' | 'message-status' | 'archive-chat' | 'mute-chat' | 'pin-chat' | 'unpin-chat'
 type OrganizationEndpoint = 'create-newsletter' | 'get-newsletter' | 'invite-newsletter' | 'list-newsletters' | 'newsletter-messages' | 'subscribe-newsletter' | 'add-chat-label' | 'edit-label' | 'add-message-label' | 'remove-chat-label' | 'remove-message-label' | 'add-community-groups' | 'create-community' | 'remove-community-groups'
@@ -170,7 +170,7 @@ const groupEndpoints: GroupEndpointInfo[] = [
 
 type ProfileEndpointInfo = {
   id: ProfileEndpoint
-  method: 'GET' | 'PATCH' | 'PUT' | 'DELETE'
+  method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
   path: string
   title: string
   description: string
@@ -181,6 +181,43 @@ type ProfileEndpointInfo = {
 }
 
 const profileEndpoints: ProfileEndpointInfo[] = [
+  {
+    id: 'user-avatar', method: 'POST', path: '/api/user/avatar', title: 'Obter avatar do usuário',
+    description: 'Retorna a URL temporária e os metadados da foto. Use preview=true para a miniatura.',
+    json: '{"number":"5511999999999","preview":true}',
+    php: "'number' => '5511999999999',\n        'preview' => true,",
+    python: "'number': '5511999999999',\n        'preview': True,",
+  },
+  {
+    id: 'block-contact', method: 'POST', path: '/api/user/block', title: 'Bloquear contato',
+    description: 'Bloqueia o contato e retorna a lista de bloqueados atualizada.',
+    json: '{"number":"5511999999999"}', php: "'number' => '5511999999999',", python: "'number': '5511999999999',",
+  },
+  {
+    id: 'blocklist', method: 'GET', path: '/api/user/blocklist', title: 'Listar bloqueados',
+    description: 'Retorna os JIDs e telefones bloqueados pela conta conectada.',
+  },
+  {
+    id: 'check-user', method: 'POST', path: '/api/contacts/check', title: 'Verificar usuário',
+    description: 'Verifica até 100 telefones e informa quais possuem uma conta no WhatsApp.',
+    json: '{"phones":["5511999999999","5511888888888"]}',
+    php: "'phones' => ['5511999999999', '5511888888888'],",
+    python: "'phones': ['5511999999999', '5511888888888'],",
+  },
+  {
+    id: 'user-contacts', method: 'GET', path: '/api/user/contacts', title: 'Listar contatos do usuário',
+    description: 'Lista os contatos sincronizados da conta conectada, com nomes e JIDs disponíveis.',
+  },
+  {
+    id: 'user-info', method: 'POST', path: '/api/user/info', title: 'Consultar usuário',
+    description: 'Consulta recado, foto, LID e nomes conhecidos de até 100 telefones.',
+    json: '{"number":["5511999999999"]}', php: "'number' => ['5511999999999'],", python: "'number': ['5511999999999'],",
+  },
+  {
+    id: 'unblock-contact', method: 'POST', path: '/api/user/unblock', title: 'Desbloquear contato',
+    description: 'Desbloqueia o contato e retorna a lista de bloqueados atualizada.',
+    json: '{"number":"5511999999999"}', php: "'number' => '5511999999999',", python: "'number': '5511999999999',",
+  },
   {
     id: 'get-profile', method: 'GET', path: '/api/profile', title: 'Consultar perfil',
     description: 'Retorna JID, nome, recado e dados da foto da conta conectada.',
@@ -964,7 +1001,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
       onCancel={(event) => { event.preventDefault(); onClose() }}>
       <header className="manageHeader">
         <div><p className="eyebrow">REFERÊNCIA DA API</p><h2 id="docs-title">Documentação</h2>
-          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.10.0</span></div>
+          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.11.0</span></div>
         <button className="closeButton" type="button" aria-label="Fechar documentação" onClick={onClose}>×</button>
       </header>
       <div className="docsBody">
@@ -1075,8 +1112,8 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
         </section>
 
         <section className="docsSection" aria-labelledby="docs-profile-title">
-          <div className="docsSectionTitle"><div><h3 id="docs-profile-title">Perfil e privacidade</h3>
-            <p>Consulte ou altere o perfil da conta conectada usando somente a API.</p></div><span className="docsQueueBadge">6 ROTAS</span></div>
+          <div className="docsSectionTitle"><div><h3 id="docs-profile-title">Usuários, perfil e privacidade</h3>
+            <p>Consulte contatos, bloqueios e perfis da conta conectada usando somente a API.</p></div><span className="docsQueueBadge">13 ROTAS</span></div>
           <div className="docsEndpoints docsProfileEndpoints">
             {profileEndpoints.map((item) => <button type="button" key={item.id} className={profileEndpoint === item.id ? 'active' : ''}
               onClick={() => { setProfileEndpoint(item.id); setProfileCopied(false) }}>
@@ -1095,7 +1132,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
             <article><strong>Online</strong><span><code>online</code> aceita <code>all</code> ou <code>match_last_seen</code>.</span></article>
             <article><strong>Demais opções</strong><span>Valores específicos inválidos retornam HTTP 422.</span></article>
           </div>
-          <p className="docsSecurity">A foto deve ser JPEG de até 5 MB. Cada chamada de privacidade altera apenas o par <code>setting</code> e <code>value</code> informado.</p>
+          <p className="docsSecurity">Use telefones internacionais sem <code>+</code>. A foto do próprio perfil deve ser JPEG de até 5 MB; URLs de avatar retornadas pelo WhatsApp são temporárias.</p>
         </section>
 
         <section className="docsSection" aria-labelledby="docs-received-media-title">

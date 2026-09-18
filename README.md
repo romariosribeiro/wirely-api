@@ -43,6 +43,7 @@ written in Go and the panel uses React, TypeScript, and Vite.
 - Per-instance activity history with filters, pagination, live refresh, and manual retry
 - Administrator inbox with WhatsApp contacts, unread counters, chat history, and direct or group replies
 - Group management with creation, participants, administrators, invite rotation, and invite joining
+- WhatsApp user management with avatar lookup, synced contacts, user details, block list, blocking, and unblocking
 - WhatsApp profile management for name, about, photo, and privacy settings
 - Operational metrics dashboard with 24-hour, 7-day, and 30-day views
 - Prometheus endpoint at `GET /metrics`, operational alerts, and structured JSON logs
@@ -569,6 +570,36 @@ curl -X POST 'http://localhost:8080/api/contacts/check' \
 ```
 
 Each result contains `phone`, `exists`, and the canonical `jid` when available.
+
+### Users and contacts
+
+All user routes use the instance Bearer Token. Phone numbers use international
+format without `+`. The existing check route is shared instead of duplicated:
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/user/avatar` | Get a user's full avatar or preview URL |
+| `POST` | `/api/user/block` | Block a contact |
+| `GET` | `/api/user/blocklist` | Get the current block list |
+| `POST` | `/api/contacts/check` | Check up to 100 WhatsApp users |
+| `GET` | `/api/user/contacts` | Get synced contacts |
+| `POST` | `/api/user/info` | Get details for up to 100 users |
+| `POST` | `/api/user/unblock` | Unblock a contact |
+
+```bash
+curl -X POST 'http://localhost:8080/api/user/avatar' \
+  -H 'Authorization: Bearer wly_your_token' \
+  -H 'Content-Type: application/json' \
+  -d '{"number":"5511999999999","preview":true}'
+
+curl -X POST 'http://localhost:8080/api/user/info' \
+  -H 'Authorization: Bearer wly_your_token' \
+  -H 'Content-Type: application/json' \
+  -d '{"number":["5511999999999"]}'
+```
+
+Avatar URLs are temporary WhatsApp URLs. A user without a visible profile
+photo returns its `jid` without `url`; this is a valid response, not an error.
 
 ## Webhooks
 
