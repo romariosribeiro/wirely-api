@@ -5,6 +5,15 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.14.2] - 2026-09-18
+
+- Documented required and optional body, path, query, and multipart fields
+  throughout the panel using the OpenAPI contract as the source of truth.
+- Added complete advanced examples to the existing text, media, location, and
+  contact endpoints instead of presenting them as replacement routes.
+- Fixed the Advanced API copy button fallback inside the documentation dialog.
+- Declared the required group JID path parameter on every advanced group route.
+
 ## [0.14.1] - 2026-09-18
 
 - Made every Advanced API documentation endpoint selectable, with a description,
@@ -102,6 +111,7 @@ All notable changes to Wirely API are documented here. The project follows
 - Each instance continues to own a single webhook configuration.
 
 [Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.9.0...HEAD
+[0.14.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.14.2
 [0.14.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.14.1
 [0.14.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.14.0
 [0.13.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.13.0

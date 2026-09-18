@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { request, type Instance } from './api'
 import { AdvancedDocs } from './AdvancedDocs'
+import { EndpointFields } from './EndpointFields'
 
 type MediaEndpoint = 'image' | 'video' | 'audio' | 'document' | 'sticker'
 type JSONEndpoint = 'text' | 'location' | 'live-location' | 'contact' | 'poll' | 'reaction'
@@ -1014,7 +1015,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
       onCancel={(event) => { event.preventDefault(); onClose() }}>
       <header className="manageHeader">
         <div><p className="eyebrow">REFERÊNCIA DA API</p><h2 id="docs-title">Documentação</h2>
-          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.14.1</span></div>
+          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.14.2</span></div>
         <button className="closeButton" type="button" aria-label="Fechar documentação" onClick={onClose}>×</button>
       </header>
       <div className="docsBody">
@@ -1042,6 +1043,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
             </button>)}
           </div>
           <div className="docsEndpointNote"><strong>{instanceEndpointInfo.title}</strong><span>{instanceEndpointInfo.description}</span></div>
+          <EndpointFields path={instanceEndpointInfo.path} method={instanceEndpointInfo.method} />
           <div className="docsCodeHeader docsGroupCodeHeader"><div className="docsLanguages" role="tablist" aria-label="Linguagem do exemplo de instância">
             {languages.map((item) => <button key={item.id} type="button" role="tab" aria-selected={language === item.id}
               onClick={() => { setLanguage(item.id); setInstanceCopied(false) }}>{item.label}</button>)}
@@ -1058,6 +1060,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
               onClick={() => { setEndpoint(item.id); setCopied(false) }}><span>POST</span><code>{isMediaEndpoint(item.id) ? '/api/send/media' : item.id === 'live-location' ? '/api/send/location/live' : `/api/send/${item.id}`}</code><strong>{item.title}</strong></button>)}
           </div>
           <div className="docsEndpointNote"><strong>{endpointInfo.title}</strong><span>{endpointInfo.description}</span></div>
+          <EndpointFields path={isMediaEndpoint(endpoint) ? '/api/send/media' : endpoint === 'live-location' ? '/api/send/location/live' : `/api/send/${endpoint}`} method="POST" />
         </section>
 
         <section className="docsSection">
@@ -1080,6 +1083,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
             </button>)}
           </div>
           <div className="docsEndpointNote"><strong>{messageActionEndpointInfo.title}</strong><span>{messageActionEndpointInfo.description}</span></div>
+          <EndpointFields path={messageActionEndpointInfo.path} method={messageActionEndpointInfo.method} />
           <div className="docsCodeHeader docsGroupCodeHeader"><div className="docsLanguages" role="tablist" aria-label="Linguagem do exemplo de mensagens e conversas">
             {languages.map((item) => <button key={item.id} type="button" role="tab" aria-selected={language === item.id}
               onClick={() => { setLanguage(item.id); setMessageActionCopied(false) }}>{item.label}</button>)}
@@ -1101,6 +1105,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
             </button>)}
           </div>
           <div className="docsEndpointNote"><strong>{organizationEndpointInfo.title}</strong><span>{organizationEndpointInfo.description}</span></div>
+          <EndpointFields path={organizationEndpointInfo.path} method={organizationEndpointInfo.method} />
           <div className="docsCodeHeader docsGroupCodeHeader"><div className="docsLanguages" role="tablist" aria-label="Linguagem do exemplo de newsletters, etiquetas e comunidades">
             {languages.map((item) => <button key={item.id} type="button" role="tab" aria-selected={language === item.id}
               onClick={() => { setLanguage(item.id); setOrganizationCopied(false) }}>{item.label}</button>)}
@@ -1119,6 +1124,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
             </button>)}
           </div>
           <div className="docsEndpointNote"><strong>{groupEndpointInfo.title}</strong><span>{groupEndpointInfo.description}</span></div>
+          <EndpointFields path={groupEndpointInfo.path} method={groupEndpointInfo.method} />
           <div className="docsCodeHeader docsGroupCodeHeader"><div className="docsLanguages" role="tablist" aria-label="Linguagem do exemplo de grupos">
             {languages.map((item) => <button key={item.id} type="button" role="tab" aria-selected={language === item.id}
               onClick={() => { setLanguage(item.id); setCopied(false); setGroupCopied(false); setProfileCopied(false); setMediaCopied(false) }}>{item.label}</button>)}
@@ -1137,6 +1143,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
             </button>)}
           </div>
           <div className="docsEndpointNote"><strong>{profileEndpointInfo.title}</strong><span>{profileEndpointInfo.description}</span></div>
+          <EndpointFields path={profileEndpointInfo.path} method={profileEndpointInfo.method} />
           <div className="docsCodeHeader docsGroupCodeHeader"><div className="docsLanguages" role="tablist" aria-label="Linguagem do exemplo de perfil">
             {languages.map((item) => <button key={item.id} type="button" role="tab" aria-selected={language === item.id}
               onClick={() => { setLanguage(item.id); setCopied(false); setGroupCopied(false); setProfileCopied(false); setMediaCopied(false) }}>{item.label}</button>)}
@@ -1161,6 +1168,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
             <article><strong>Resposta Base64</strong><span>Adicione <code>?format=base64</code> para receber JSON.</span></article>
           </div>
           <div className="docsEndpointNote"><strong>Evento message.received</strong><span>Quando <code>media.available</code> for verdadeiro, use <code>media.downloadUrl</code> com o Bearer Token da mesma instância.</span></div>
+          <EndpointFields path="/api/messages/{messageID}/media" method="GET" />
           <pre className="docsCode docsQueueCode" aria-label="Exemplo de webhook com mídia"><code>{receivedMediaEvent}</code></pre>
           <div className="docsCodeHeader docsGroupCodeHeader"><div className="docsLanguages" role="tablist" aria-label="Linguagem do download de mídia">
             {languages.map((item) => <button key={item.id} type="button" role="tab" aria-selected={language === item.id}
@@ -1179,6 +1187,12 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
             <article><strong>Retry-After</strong><span>O tempo solicitado pelo destino é respeitado, até 24 horas.</span></article>
             <article><strong>Idempotência</strong><span>Elimine duplicidades pelo header <code>X-Wirely-Delivery</code>.</span></article>
           </div>
+          <div className="docsEndpointNote"><strong>POST /api/webhook/test</strong><span>Enfileira um evento de teste; não exige body.</span></div>
+          <EndpointFields path="/api/webhook/test" method="POST" />
+          <div className="docsEndpointNote"><strong>GET /api/webhook/jobs/{'{eventID}'}</strong><span>Consulta uma entrega pelo identificador obrigatório.</span></div>
+          <EndpointFields path="/api/webhook/jobs/{eventID}" method="GET" />
+          <div className="docsEndpointNote"><strong>GET /api/webhook/deliveries</strong><span>Lista entregas com paginação e filtro opcionais.</span></div>
+          <EndpointFields path="/api/webhook/deliveries" method="GET" />
           <div className="docsCodeHeader docsGroupCodeHeader"><div className="docsLanguages" role="tablist" aria-label="Linguagem do exemplo de webhook">
             {languages.map((item) => <button key={item.id} type="button" role="tab" aria-selected={language === item.id}
               onClick={() => { setLanguage(item.id); setWebhookCopied(false) }}>{item.label}</button>)}
@@ -1196,6 +1210,12 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
             <article><strong>Recuperação</strong><span>Até 5 tentativas com espera progressiva entre falhas.</span></article>
             <article><strong>Controle</strong><span>Consulte, cancele ou repita um envio pelo ID do job.</span></article>
           </div>
+          <div className="docsEndpointNote"><strong>POST /api/queue/text</strong><span>Campos do envio persistente de texto.</span></div>
+          <EndpointFields path="/api/queue/text" method="POST" />
+          <div className="docsEndpointNote"><strong>POST /api/queue/media</strong><span>Campos multipart do envio persistente de mídia.</span></div>
+          <EndpointFields path="/api/queue/media" method="POST" />
+          <div className="docsEndpointNote"><strong>GET · DELETE /api/queue/{'{jobID}'}</strong><span>Consulta ou cancela um job; retry reenvia um job com falha.</span></div>
+          <EndpointFields path="/api/queue/{jobID}" method="GET" />
           <pre className="docsCode docsQueueCode" aria-label="Exemplo da fila confiável"><code>{queueCode}</code></pre>
           <p className="docsSecurity">Use <code>/api/queue/text</code> para texto e <code>/api/queue/media</code> para imagem, vídeo, áudio, documento ou figurinha. Mídias usam o mesmo multipart do envio síncrono.</p>
         </section>

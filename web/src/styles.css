@@ -433,6 +433,13 @@ select:focus { border-color: #8ea5eb; box-shadow: 0 0 0 3px #a5baff12; }
 .docsStaticEndpoint strong { color: #aeb7c7; font-size: 10px; font-weight: 500; }
 .docsEndpointNote { display: flex; gap: 8px; margin-top: 10px; color: #8d98a9; font-size: 10px; }
 .docsEndpointNote strong { color: #bdc6d5; font-weight: 550; }
+.docsFieldGuide { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.docsFieldGuide > div { min-width: 0; padding: 12px; border: 1px solid #283344; border-radius: 10px; background: #0c1119; }
+.docsFieldGuide strong { display: block; margin-bottom: 8px; color: #cbd5e1; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
+.docsFieldGuide ul { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.docsFieldGuide li { display: grid; gap: 2px; min-width: 0; }
+.docsFieldGuide li code { color: #9fb2ff; font-size: 10px; overflow-wrap: anywhere; }
+.docsFieldGuide li span, .docsFieldGuide p { margin: 0; color: #8491a4; font-size: 9px; line-height: 1.45; overflow-wrap: anywhere; }
 .docsCodeHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .docsLanguages { display: flex; gap: 4px; padding: 3px; border: 1px solid #29313f; border-radius: 7px; background: #0d1016; }
 .docsLanguages button { min-height: 28px; padding: 5px 10px; border: 0; border-radius: 5px; color: #8e98a8; background: transparent; font-size: 10px; }
@@ -471,6 +478,7 @@ select:focus { border-color: #8ea5eb; box-shadow: 0 0 0 3px #a5baff12; }
   .docsSectionTitle { align-items: stretch; flex-direction: column; }
   .docsSectionTitle a { align-self: flex-start; }
   .docsEndpointNote { align-items: flex-start; flex-direction: column; }
+  .docsFieldGuide { grid-template-columns: 1fr; }
   .docsCode { min-height: 290px; padding: 13px; }
   .docsCode code { font-size: 9.5px; }
 }

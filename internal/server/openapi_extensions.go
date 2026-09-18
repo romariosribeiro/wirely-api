@@ -23,7 +23,7 @@ func buildExtendedOpenAPI() []byte {
 	if json.Unmarshal([]byte(openAPISpec), &spec) != nil {
 		return []byte(openAPISpec)
 	}
-	spec["info"].(map[string]any)["version"] = "0.14.1"
+	spec["info"].(map[string]any)["version"] = "0.14.2"
 	paths := spec["paths"].(map[string]any)
 	spec["tags"] = append(spec["tags"].([]any), map[string]any{"name": "Status"})
 	schemas := spec["components"].(map[string]any)["schemas"].(map[string]any)
@@ -56,6 +56,22 @@ func buildExtendedOpenAPI() []byte {
 		"get":  bearerOperation("Grupos", "Listar solicitações de entrada", 200, "GroupJoinRequestList", nil),
 		"post": bearerOperation("Grupos", "Aprovar ou rejeitar solicitações", 200, "GroupParticipantList", jsonBody("GroupJoinRequestAction")),
 	}
+	for _, path := range []string{
+		"/api/groups/{groupJID}/description",
+		"/api/groups/{groupJID}/photo",
+		"/api/groups/{groupJID}/leave",
+		"/api/groups/{groupJID}/permissions",
+		"/api/groups/{groupJID}/join-approval",
+		"/api/groups/{groupJID}/join-requests",
+	} {
+		for _, operation := range paths[path].(map[string]any) {
+			operation.(map[string]any)["parameters"] = []any{map[string]any{
+				"name": "groupJID", "in": "path", "required": true,
+				"description": "JID completo do grupo retornado por GET /api/groups.",
+				"schema":      map[string]any{"type": "string", "pattern": "@g\\.us$"},
+			}}
+		}
+	}
 
 	addAdvancedMessageProperties(schemas, "TextRequest", true)
 	addAdvancedMessageProperties(schemas, "LocationRequest", false)
@@ -74,11 +90,11 @@ func buildExtendedOpenAPI() []byte {
 
 func addAdvancedMessageProperties(schemas map[string]any, name string, linkPreview bool) {
 	properties := schemas[name].(map[string]any)["properties"].(map[string]any)
-	properties["replyTo"] = map[string]any{"$ref": "#/components/schemas/ReplyOptions"}
-	properties["mentions"] = map[string]any{"type": "array", "maxItems": 100, "items": map[string]any{"type": "string"}}
-	properties["forwarded"] = map[string]any{"type": "boolean"}
+	properties["replyTo"] = map[string]any{"$ref": "#/components/schemas/ReplyOptions", "description": "Mensagem que será respondida."}
+	properties["mentions"] = map[string]any{"type": "array", "maxItems": 100, "description": "Telefones ou JIDs mencionados na mensagem.", "items": map[string]any{"type": "string"}}
+	properties["forwarded"] = map[string]any{"type": "boolean", "description": "Exibe a indicação de mensagem encaminhada."}
 	if linkPreview {
-		properties["linkPreview"] = map[string]any{"type": "boolean"}
+		properties["linkPreview"] = map[string]any{"type": "boolean", "description": "Gera automaticamente a prévia do primeiro link."}
 	}
 }
 
@@ -111,7 +127,7 @@ func bearerOperation(tag, summary string, status int, schema string, body map[st
 }
 
 const openAPIAdditionSchemas = `{
-  "ReplyOptions":{"type":"object","required":["messageId"],"properties":{"messageId":{"type":"string"},"participant":{"type":"string"},"text":{"type":"string"}}},
+  "ReplyOptions":{"type":"object","required":["messageId"],"properties":{"messageId":{"type":"string","description":"ID da mensagem respondida."},"participant":{"type":"string","description":"Autor da mensagem; necessário ao responder mensagens recebidas em grupo."},"text":{"type":"string","description":"Texto citado opcional quando disponível."}}},
   "LiveLocationRequest":{"type":"object","required":["recipient","latitude","longitude"],"properties":{"recipient":{"type":"string"},"latitude":{"type":"number","minimum":-90,"maximum":90},"longitude":{"type":"number","minimum":-180,"maximum":180},"accuracy":{"type":"integer"},"speed":{"type":"number"},"bearing":{"type":"integer","maximum":359},"caption":{"type":"string"},"sequence":{"type":"integer"},"timeOffset":{"type":"integer"}}},
   "ForwardMessageRequest":{"type":"object","required":["chat","messageId","recipient"],"properties":{"chat":{"type":"string"},"messageId":{"type":"string"},"recipient":{"type":"string"}}},
   "DisappearingRequest":{"type":"object","required":["chat","duration"],"properties":{"chat":{"type":"string"},"duration":{"type":"string","enum":["off","24h","7d","90d"]}}},
