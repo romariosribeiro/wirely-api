@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { request, type Instance } from './api'
+import { AdvancedDocs } from './AdvancedDocs'
 
 type MediaEndpoint = 'image' | 'video' | 'audio' | 'document' | 'sticker'
-type JSONEndpoint = 'text' | 'location' | 'contact' | 'poll' | 'reaction'
+type JSONEndpoint = 'text' | 'location' | 'live-location' | 'contact' | 'poll' | 'reaction'
 type Endpoint = JSONEndpoint | MediaEndpoint
 type GroupEndpoint = 'list' | 'create' | 'join' | 'details' | 'rename' | 'participants' | 'invite' | 'rotate-invite'
 type ProfileEndpoint = 'user-avatar' | 'block-contact' | 'blocklist' | 'check-user' | 'user-contacts' | 'user-info' | 'unblock-contact' | 'get-profile' | 'update-profile' | 'set-photo' | 'delete-photo' | 'get-privacy' | 'update-privacy'
 type InstanceEndpoint = 'login' | 'all' | 'create' | 'settings' | 'delete' | 'details' | 'connect' | 'disconnect' | 'logout' | 'pair' | 'proxy-set' | 'proxy-delete' | 'qr' | 'status' | 'check'
-type MessageActionEndpoint = 'delete-message' | 'edit-message' | 'mark-read' | 'message-status' | 'archive-chat' | 'mute-chat' | 'pin-chat' | 'unpin-chat'
+type MessageActionEndpoint = 'delete-message' | 'edit-message' | 'forward-message' | 'mark-read' | 'message-status' | 'archive-chat' | 'mute-chat' | 'pin-chat' | 'unpin-chat' | 'disappearing' | 'set-presence' | 'subscribe-presence' | 'get-presence'
 type OrganizationEndpoint = 'create-newsletter' | 'get-newsletter' | 'invite-newsletter' | 'list-newsletters' | 'newsletter-messages' | 'subscribe-newsletter' | 'add-chat-label' | 'edit-label' | 'add-message-label' | 'remove-chat-label' | 'remove-message-label' | 'add-community-groups' | 'create-community' | 'remove-community-groups'
 type Language = 'curl' | 'laravel' | 'node' | 'python'
 
@@ -41,7 +42,7 @@ const instanceEndpoints: InstanceEndpointInfo[] = [
 
 type MessageActionEndpointInfo = {
   id: MessageActionEndpoint
-  method: 'GET' | 'POST'
+  method: 'GET' | 'POST' | 'PUT'
   path: string
   examplePath: string
   title: string
@@ -54,12 +55,17 @@ type MessageActionEndpointInfo = {
 const messageActionEndpoints: MessageActionEndpointInfo[] = [
   { id: 'delete-message', method: 'POST', path: '/api/messages/delete', examplePath: '/api/messages/delete', title: 'Excluir para todos', description: 'Revoga uma mensagem enviada. Em grupos, participant permite excluir mensagem de outro membro quando a conta for administradora.', json: '{"chat":"5511999999999","messageId":"3EB0ABC123"}', php: "'chat' => '5511999999999',\n        'messageId' => '3EB0ABC123',", python: "'chat': '5511999999999',\n        'messageId': '3EB0ABC123'," },
   { id: 'edit-message', method: 'POST', path: '/api/messages/edit', examplePath: '/api/messages/edit', title: 'Editar mensagem', description: 'Edita uma mensagem de texto enviada dentro da janela permitida pelo WhatsApp.', json: '{"chat":"5511999999999","messageId":"3EB0ABC123","message":"Texto corrigido"}', php: "'chat' => '5511999999999',\n        'messageId' => '3EB0ABC123',\n        'message' => 'Texto corrigido',", python: "'chat': '5511999999999',\n        'messageId': '3EB0ABC123',\n        'message': 'Texto corrigido'," },
+  { id: 'forward-message', method: 'POST', path: '/api/messages/forward', examplePath: '/api/messages/forward', title: 'Encaminhar mensagem', description: 'Encaminha texto ou mídia ainda disponível no histórico/cache local.', json: '{"chat":"5511999999999","messageId":"3EB0ABC123","recipient":"5511888888888"}', php: "'chat' => '5511999999999',\n        'messageId' => '3EB0ABC123',\n        'recipient' => '5511888888888',", python: "'chat': '5511999999999',\n        'messageId': '3EB0ABC123',\n        'recipient': '5511888888888'," },
   { id: 'mark-read', method: 'POST', path: '/api/messages/read', examplePath: '/api/messages/read', title: 'Marcar como lida', description: 'Envia confirmação de leitura para até 100 IDs do mesmo remetente. Em grupos, informe participant.', json: '{"chat":"5511999999999","messageIds":["3EB0ABC123"]}', php: "'chat' => '5511999999999',\n        'messageIds' => ['3EB0ABC123'],", python: "'chat': '5511999999999',\n        'messageIds': ['3EB0ABC123']," },
   { id: 'message-status', method: 'GET', path: '/api/messages/{messageID}/status', examplePath: '/api/messages/3EB0ABC123/status', title: 'Status da mensagem', description: 'Retorna o último recibo persistido: sent, delivered, read ou played.' },
   { id: 'archive-chat', method: 'POST', path: '/api/chats/archive', examplePath: '/api/chats/archive', title: 'Arquivar conversa', description: 'Arquiva a conversa. Envie archived=false para desarquivar.', json: '{"chat":"5511999999999","archived":true}', php: "'chat' => '5511999999999',\n        'archived' => true,", python: "'chat': '5511999999999',\n        'archived': True," },
   { id: 'mute-chat', method: 'POST', path: '/api/chats/mute', examplePath: '/api/chats/mute', title: 'Silenciar conversa', description: 'Silencia pelo período em segundos; zero mantém silenciada sem prazo.', json: '{"chat":"5511999999999","durationSeconds":28800}', php: "'chat' => '5511999999999',\n        'durationSeconds' => 28800,", python: "'chat': '5511999999999',\n        'durationSeconds': 28800," },
   { id: 'pin-chat', method: 'POST', path: '/api/chats/pin', examplePath: '/api/chats/pin', title: 'Fixar conversa', description: 'Fixa a conversa na lista do WhatsApp.', json: '{"chat":"5511999999999"}', php: "'chat' => '5511999999999',", python: "'chat': '5511999999999'," },
   { id: 'unpin-chat', method: 'POST', path: '/api/chats/unpin', examplePath: '/api/chats/unpin', title: 'Desafixar conversa', description: 'Remove a conversa da lista de fixadas.', json: '{"chat":"5511999999999"}', php: "'chat' => '5511999999999',", python: "'chat': '5511999999999'," },
+  { id: 'disappearing', method: 'PUT', path: '/api/chats/disappearing', examplePath: '/api/chats/disappearing', title: 'Mensagens temporárias', description: 'Define o temporizador oficial da conversa: off, 24h, 7d ou 90d.', json: '{"chat":"5511999999999","duration":"7d"}', php: "'chat' => '5511999999999',\n        'duration' => '7d',", python: "'chat': '5511999999999',\n        'duration': '7d'," },
+  { id: 'set-presence', method: 'POST', path: '/api/presence', examplePath: '/api/presence', title: 'Definir presença global', description: 'Marca a instância como available ou unavailable.', json: '{"presence":"available"}', php: "'presence' => 'available',", python: "'presence': 'available'," },
+  { id: 'subscribe-presence', method: 'POST', path: '/api/presence/subscribe', examplePath: '/api/presence/subscribe', title: 'Assinar presença', description: 'Assina atualizações de presença de um contato e habilita presence.updated.', json: '{"phone":"5511999999999"}', php: "'phone' => '5511999999999',", python: "'phone': '5511999999999'," },
+  { id: 'get-presence', method: 'GET', path: '/api/presence/{phone}', examplePath: '/api/presence/5511999999999', title: 'Consultar presença', description: 'Retorna o último estado recebido: available, unavailable ou unknown.' },
 ]
 
 type OrganizationEndpointInfo = {
@@ -99,6 +105,7 @@ const endpoints: { id: Endpoint; title: string; description: string }[] = [
   { id: 'document', title: 'Documento', description: 'Use type=document; o nome original do arquivo é preservado.' },
   { id: 'sticker', title: 'Figurinha', description: 'Use type=sticker com um arquivo WebP sem legenda.' },
   { id: 'location', title: 'Localização', description: 'Latitude e longitude, com nome e endereço opcionais.' },
+  { id: 'live-location', title: 'Localização ao vivo', description: 'Experimental: envia uma atualização de localização ao vivo com sequência e deslocamento de tempo.' },
   { id: 'contact', title: 'Contato', description: 'O Wirely monta um vCard seguro usando nome, telefone e organização.' },
   { id: 'poll', title: 'Enquete', description: 'De 2 a 12 opções e escolha única ou múltipla.' },
   { id: 'reaction', title: 'Reação', description: 'Reaja pelo ID da mensagem; reação vazia remove a reação atual.' },
@@ -270,6 +277,11 @@ const jsonExamples: Record<JSONEndpoint, { json: string; php: string; python: st
     php: "'recipient' => '5511999999999',\n        'latitude' => -23.5505,\n        'longitude' => -46.6333,\n        'name' => 'Praça da Sé',\n        'address' => 'São Paulo - SP',",
     python: "'recipient': '5511999999999',\n        'latitude': -23.5505,\n        'longitude': -46.6333,\n        'name': 'Praça da Sé',\n        'address': 'São Paulo - SP',",
   },
+  'live-location': {
+    json: '{"recipient":"5511999999999","latitude":-23.5505,"longitude":-46.6333,"accuracy":10,"speed":0,"bearing":0,"caption":"Em deslocamento","sequence":1,"timeOffset":0}',
+    php: "'recipient' => '5511999999999',\n        'latitude' => -23.5505,\n        'longitude' => -46.6333,\n        'accuracy' => 10,\n        'caption' => 'Em deslocamento',\n        'sequence' => 1,",
+    python: "'recipient': '5511999999999',\n        'latitude': -23.5505,\n        'longitude': -46.6333,\n        'accuracy': 10,\n        'caption': 'Em deslocamento',\n        'sequence': 1,",
+  },
   contact: {
     json: '{"recipient":"5511999999999","fullName":"Maria Silva","organization":"Wirely","phone":"5511888888888"}',
     php: "'recipient' => '5511999999999',\n        'fullName' => 'Maria Silva',\n        'organization' => 'Wirely',\n        'phone' => '5511888888888',",
@@ -292,7 +304,8 @@ function isMediaEndpoint(endpoint: Endpoint): endpoint is MediaEndpoint {
 }
 
 function snippet(language: Language, endpoint: Endpoint, origin: string, token: string) {
-  const url = `${origin}/api/send/${isMediaEndpoint(endpoint) ? 'media' : endpoint}`
+  const sendPath = endpoint === 'live-location' ? 'location/live' : isMediaEndpoint(endpoint) ? 'media' : endpoint
+  const url = `${origin}/api/send/${sendPath}`
   const credential = token || 'wly_SEU_TOKEN'
   const presence = endpoint === 'audio' ? 'recording' : 'composing'
   if (!isMediaEndpoint(endpoint)) {
@@ -460,7 +473,7 @@ function messageActionSnippet(language: Language, endpoint: MessageActionEndpoin
     return `curl -X ${info.method} '${url}' \\\n  -H 'Authorization: Bearer ${credential}'${body}`
   }
   if (language === 'laravel') {
-    const method = info.method === 'GET' ? 'get' : 'post'
+    const method = info.method.toLowerCase()
     const args = hasBody ? `, [\n        ${info.php ?? ''}\n    ]` : ''
     return `use Illuminate\\Support\\Facades\\Http;
 
@@ -1001,7 +1014,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
       onCancel={(event) => { event.preventDefault(); onClose() }}>
       <header className="manageHeader">
         <div><p className="eyebrow">REFERÊNCIA DA API</p><h2 id="docs-title">Documentação</h2>
-          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.11.0</span></div>
+          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.14.0</span></div>
         <button className="closeButton" type="button" aria-label="Fechar documentação" onClick={onClose}>×</button>
       </header>
       <div className="docsBody">
@@ -1042,7 +1055,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
             <a className="secondaryButton" href="/openapi.json" target="_blank" rel="noreferrer">OpenAPI JSON</a></div>
           <div className="docsEndpoints">
             {endpoints.map((item) => <button type="button" key={item.id} className={endpoint === item.id ? 'active' : ''}
-              onClick={() => { setEndpoint(item.id); setCopied(false) }}><span>POST</span><code>{isMediaEndpoint(item.id) ? '/api/send/media' : `/api/send/${item.id}`}</code><strong>{item.title}</strong></button>)}
+              onClick={() => { setEndpoint(item.id); setCopied(false) }}><span>POST</span><code>{isMediaEndpoint(item.id) ? '/api/send/media' : item.id === 'live-location' ? '/api/send/location/live' : `/api/send/${item.id}`}</code><strong>{item.title}</strong></button>)}
           </div>
           <div className="docsEndpointNote"><strong>{endpointInfo.title}</strong><span>{endpointInfo.description}</span></div>
         </section>
@@ -1059,7 +1072,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
 
         <section className="docsSection" aria-labelledby="docs-message-actions-title">
           <div className="docsSectionTitle"><div><h3 id="docs-message-actions-title">Mensagens e conversas</h3>
-            <p>Edite, exclua e acompanhe mensagens, ou organize conversas pelo Bearer Token.</p></div><span className="docsQueueBadge">8 ROTAS</span></div>
+            <p>Edite, encaminhe e acompanhe mensagens, organize conversas e controle presença pelo Bearer Token.</p></div><span className="docsQueueBadge">13 ROTAS</span></div>
           <div className="docsEndpoints docsGroupEndpoints">
             {messageActionEndpoints.map((item) => <button type="button" key={item.id} className={messageActionEndpoint === item.id ? 'active' : ''}
               onClick={() => { setMessageActionEndpoint(item.id); setMessageActionCopied(false) }}>
@@ -1073,7 +1086,10 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
           </div><button className="secondaryButton" type="button" onClick={() => void copyCode(messageActionCode, 'message-action')}>{messageActionCopied ? 'Copiado ✓' : 'Copiar código'}</button></div>
           <pre className="docsCode docsGroupCode" aria-label={`Exemplo de mensagens e conversas em ${languages.find((item) => item.id === language)?.label}`}><code>{messageActionCode}</code></pre>
           <p className="docsSecurity">Use telefone internacional sem <code>+</code> ou um JID de conversa. Para mensagens recebidas em grupos, informe também <code>participant</code>.</p>
+          <p className="docsDelayNote"><strong>Recursos avançados</strong><span>Texto, localização, contato e mídia aceitam <code>replyTo</code>, <code>mentions</code> e <code>forwarded</code>. Texto aceita <code>linkPreview</code>; imagem e vídeo aceitam <code>viewOnce</code>. Na mídia, envie <code>messageOptions</code> como JSON multipart.</span></p>
         </section>
+
+        <AdvancedDocs />
 
         <section className="docsSection" aria-labelledby="docs-organization-title">
           <div className="docsSectionTitle"><div><h3 id="docs-organization-title">Newsletters, etiquetas e comunidades</h3>

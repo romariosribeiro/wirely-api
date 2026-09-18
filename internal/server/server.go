@@ -28,6 +28,10 @@ type MessageSender interface {
 	SendMedia(context.Context, string, string, engine.MediaPayload) (engine.SentMessage, error)
 }
 
+type AdvancedMessageSender interface {
+	SendTextAdvanced(context.Context, string, string, string, engine.MessageOptions) (engine.SentMessage, error)
+}
+
 type StructuredMessageSender interface {
 	SendLocation(context.Context, string, string, engine.LocationPayload) (engine.SentMessage, error)
 	SendContact(context.Context, string, string, engine.ContactPayload) (engine.SentMessage, error)
@@ -35,8 +39,32 @@ type StructuredMessageSender interface {
 	SendReaction(context.Context, string, string, engine.ReactionPayload) (engine.SentMessage, error)
 }
 
+type AdvancedStructuredMessageSender interface {
+	SendLocationAdvanced(context.Context, string, string, engine.LocationPayload, engine.MessageOptions) (engine.SentMessage, error)
+	SendContactAdvanced(context.Context, string, string, engine.ContactPayload, engine.MessageOptions) (engine.SentMessage, error)
+}
+
+type LiveLocationSender interface {
+	SendLiveLocation(context.Context, string, string, engine.LiveLocationPayload, engine.MessageOptions) (engine.SentMessage, error)
+}
+
+type StatusManager interface {
+	SendStatusText(context.Context, string, engine.StatusTextPayload) (engine.SentMessage, error)
+	SendStatusMedia(context.Context, string, engine.MediaPayload) (engine.SentMessage, error)
+}
+
 type ChatPresenceSender interface {
 	SendChatPresence(context.Context, string, string, string) error
+}
+
+type PresenceManager interface {
+	SetPresence(context.Context, string, string) (engine.PresenceState, error)
+	SubscribePresence(context.Context, string, string) (engine.PresenceState, error)
+	GetPresence(context.Context, string, string) (engine.PresenceState, error)
+}
+
+type DisappearingMessageManager interface {
+	SetDisappearingMessages(context.Context, string, string, string) (engine.ChatActionResult, error)
 }
 
 type InstanceConnector interface {
@@ -85,12 +113,26 @@ type GroupManager interface {
 	JoinGroup(context.Context, string, string) (string, error)
 }
 
+type AdvancedGroupManager interface {
+	SetGroupDescription(context.Context, string, string, string) error
+	SetGroupPhoto(context.Context, string, string, []byte) (string, error)
+	LeaveGroup(context.Context, string, string) error
+	SetGroupPermissions(context.Context, string, string, *bool, *bool) error
+	SetGroupJoinApproval(context.Context, string, string, bool) error
+	ListGroupJoinRequests(context.Context, string, string) ([]engine.GroupJoinRequest, error)
+	UpdateGroupJoinRequests(context.Context, string, string, string, []string) ([]engine.GroupParticipant, error)
+}
+
 type ChatMessageSender interface {
 	SendChatText(context.Context, string, string, string) (engine.SentMessage, error)
 }
 
 type ReceivedMediaProvider interface {
 	OpenReceivedMedia(context.Context, string, string) (engine.ReceivedMedia, error)
+}
+
+type MessageForwarder interface {
+	ForwardMessage(context.Context, string, string, string, string) (engine.SentMessage, error)
 }
 
 type MessageActionManager interface {
@@ -132,6 +174,10 @@ type WebhookTester interface {
 	Test(string) (string, error)
 }
 
+type EventStream interface {
+	Subscribe(string) (<-chan engine.Event, func())
+}
+
 type Dependencies struct {
 	Store          *storage.Store
 	Engine         *engine.Manager
@@ -139,15 +185,21 @@ type Dependencies struct {
 	SecureCookies  bool
 	Sender         MessageSender
 	Structured     StructuredMessageSender
+	Statuses       StatusManager
 	Presence       ChatPresenceSender
+	PresenceState  PresenceManager
 	Groups         GroupManager
+	AdvancedGroups AdvancedGroupManager
 	Profile        ProfileManager
 	WhatsAppUsers  UserManager
 	Webhooks       WebhookRetrier
+	Events         EventStream
 	Contacts       ContactProvider
 	ChatSender     ChatMessageSender
 	ReceivedMedia  ReceivedMediaProvider
+	Forwarder      MessageForwarder
 	MessageActions MessageActionManager
+	Disappearing   DisappearingMessageManager
 	Organization   OrganizationManager
 	Queue          MessageQueue
 	RateLimit      int
@@ -163,16 +215,22 @@ type Server struct {
 	connector      InstanceConnector
 	sender         MessageSender
 	structured     StructuredMessageSender
+	statuses       StatusManager
 	presence       ChatPresenceSender
+	presenceState  PresenceManager
 	groups         GroupManager
+	advancedGroups AdvancedGroupManager
 	profile        ProfileManager
 	whatsAppUsers  UserManager
 	webhooks       WebhookRetrier
+	events         EventStream
 	webhookTester  WebhookTester
 	contacts       ContactProvider
 	chatSender     ChatMessageSender
 	receivedMedia  ReceivedMediaProvider
+	forwarder      MessageForwarder
 	messageActions MessageActionManager
+	disappearing   DisappearingMessageManager
 	organization   OrganizationManager
 	queue          MessageQueue
 	secureCookies  bool
@@ -191,8 +249,11 @@ func New(dependencies Dependencies) *Server {
 	}
 	sender := dependencies.Sender
 	structured := dependencies.Structured
+	statuses := dependencies.Statuses
 	presence := dependencies.Presence
+	presenceState := dependencies.PresenceState
 	groups := dependencies.Groups
+	advancedGroups := dependencies.AdvancedGroups
 	profile := dependencies.Profile
 	whatsAppUsers := dependencies.WhatsAppUsers
 	if sender == nil && dependencies.Engine != nil {
@@ -201,8 +262,14 @@ func New(dependencies Dependencies) *Server {
 	if structured == nil && dependencies.Engine != nil {
 		structured = dependencies.Engine
 	}
+	if statuses == nil && dependencies.Engine != nil {
+		statuses = dependencies.Engine
+	}
 	if groups == nil && dependencies.Engine != nil {
 		groups = dependencies.Engine
+	}
+	if advancedGroups == nil && dependencies.Engine != nil {
+		advancedGroups = dependencies.Engine
 	}
 	if profile == nil && dependencies.Engine != nil {
 		profile = dependencies.Engine
@@ -213,10 +280,15 @@ func New(dependencies Dependencies) *Server {
 	if presence == nil && dependencies.Engine != nil {
 		presence = dependencies.Engine
 	}
+	if presenceState == nil && dependencies.Engine != nil {
+		presenceState = dependencies.Engine
+	}
 	contacts := dependencies.Contacts
 	chatSender := dependencies.ChatSender
 	receivedMedia := dependencies.ReceivedMedia
+	forwarder := dependencies.Forwarder
 	messageActions := dependencies.MessageActions
+	disappearing := dependencies.Disappearing
 	organization := dependencies.Organization
 	if dependencies.Engine != nil {
 		if contacts == nil {
@@ -228,16 +300,22 @@ func New(dependencies Dependencies) *Server {
 		if receivedMedia == nil {
 			receivedMedia = dependencies.Engine
 		}
+		if forwarder == nil {
+			forwarder = dependencies.Engine
+		}
 		if messageActions == nil {
 			messageActions = dependencies.Engine
+		}
+		if disappearing == nil {
+			disappearing = dependencies.Engine
 		}
 		if organization == nil {
 			organization = dependencies.Engine
 		}
 	}
 	webhookTester, _ := dependencies.Webhooks.(WebhookTester)
-	server := &Server{store: dependencies.Store, engine: dependencies.Engine, connector: connector, sender: sender, structured: structured, presence: presence, groups: groups, profile: profile, whatsAppUsers: whatsAppUsers, webhooks: dependencies.Webhooks, webhookTester: webhookTester,
-		contacts: contacts, chatSender: chatSender, receivedMedia: receivedMedia, messageActions: messageActions, organization: organization, queue: dependencies.Queue, secureCookies: dependencies.SecureCookies, startedAt: time.Now(),
+	server := &Server{store: dependencies.Store, engine: dependencies.Engine, connector: connector, sender: sender, structured: structured, statuses: statuses, presence: presence, presenceState: presenceState, groups: groups, advancedGroups: advancedGroups, profile: profile, whatsAppUsers: whatsAppUsers, webhooks: dependencies.Webhooks, events: dependencies.Events, webhookTester: webhookTester,
+		contacts: contacts, chatSender: chatSender, receivedMedia: receivedMedia, forwarder: forwarder, messageActions: messageActions, disappearing: disappearing, organization: organization, queue: dependencies.Queue, secureCookies: dependencies.SecureCookies, startedAt: time.Now(),
 		limiter: newRateLimiter(dependencies.RateLimit, time.Minute), backups: dependencies.Backups, updates: dependencies.Updates, restart: dependencies.Restart,
 		httpMetrics: newHTTPMetrics()}
 	mux := http.NewServeMux()
@@ -245,22 +323,31 @@ func New(dependencies Dependencies) *Server {
 	mux.HandleFunc("GET /metrics", server.prometheusMetrics)
 	mux.HandleFunc("GET /openapi.json", openAPI)
 	mux.HandleFunc("GET /api/openapi.json", openAPI)
+	mux.HandleFunc("GET /api/events", server.publicEvents)
 	mux.HandleFunc("POST /api/auth/login", server.login)
 	mux.HandleFunc("POST /api/send/text", server.publicSendTextMessage)
 	mux.HandleFunc("POST /api/send/media", server.publicSendMediaMessage)
 	mux.HandleFunc("POST /api/send/location", server.publicSendLocation)
+	mux.HandleFunc("POST /api/send/location/live", server.publicSendLiveLocation)
 	mux.HandleFunc("POST /api/send/contact", server.publicSendContact)
 	mux.HandleFunc("POST /api/send/poll", server.publicSendPoll)
 	mux.HandleFunc("POST /api/send/reaction", server.publicSendReaction)
+	mux.HandleFunc("POST /api/status/text", server.publicSendStatusText)
+	mux.HandleFunc("POST /api/status/media", server.publicSendStatusMedia)
 	mux.HandleFunc("GET /api/messages/{messageID}/media", server.publicDownloadReceivedMedia)
 	mux.HandleFunc("POST /api/messages/delete", server.publicDeleteMessage)
 	mux.HandleFunc("POST /api/messages/edit", server.publicEditMessage)
 	mux.HandleFunc("POST /api/messages/read", server.publicMarkMessagesRead)
+	mux.HandleFunc("POST /api/messages/forward", server.publicForwardMessage)
 	mux.HandleFunc("GET /api/messages/{messageID}/status", server.publicGetMessageStatus)
 	mux.HandleFunc("POST /api/chats/archive", server.publicArchiveChat)
 	mux.HandleFunc("POST /api/chats/mute", server.publicMuteChat)
 	mux.HandleFunc("POST /api/chats/pin", server.publicPinChat)
 	mux.HandleFunc("POST /api/chats/unpin", server.publicUnpinChat)
+	mux.HandleFunc("PUT /api/chats/disappearing", server.publicSetDisappearingMessages)
+	mux.HandleFunc("POST /api/presence", server.publicSetPresence)
+	mux.HandleFunc("POST /api/presence/subscribe", server.publicSubscribePresence)
+	mux.HandleFunc("GET /api/presence/{phone}", server.publicGetPresence)
 	mux.HandleFunc("POST /api/newsletters", server.publicCreateNewsletter)
 	mux.HandleFunc("POST /api/newsletters/info", server.publicGetNewsletter)
 	mux.HandleFunc("POST /api/newsletters/invite", server.publicGetNewsletterByInvite)
@@ -297,6 +384,14 @@ func New(dependencies Dependencies) *Server {
 	mux.HandleFunc("GET /api/groups", server.publicListGroups)
 	mux.HandleFunc("POST /api/groups", server.publicCreateGroup)
 	mux.HandleFunc("POST /api/groups/join", server.publicJoinGroup)
+	mux.HandleFunc("PATCH /api/groups/{groupJID}/description", server.publicSetGroupDescription)
+	mux.HandleFunc("PUT /api/groups/{groupJID}/photo", server.publicSetGroupPhoto)
+	mux.HandleFunc("DELETE /api/groups/{groupJID}/photo", server.publicDeleteGroupPhoto)
+	mux.HandleFunc("POST /api/groups/{groupJID}/leave", server.publicLeaveGroup)
+	mux.HandleFunc("PATCH /api/groups/{groupJID}/permissions", server.publicSetGroupPermissions)
+	mux.HandleFunc("PUT /api/groups/{groupJID}/join-approval", server.publicSetGroupJoinApproval)
+	mux.HandleFunc("GET /api/groups/{groupJID}/join-requests", server.publicListGroupJoinRequests)
+	mux.HandleFunc("POST /api/groups/{groupJID}/join-requests", server.publicUpdateGroupJoinRequests)
 	mux.HandleFunc("GET /api/groups/{groupJID}", server.publicGetGroup)
 	mux.HandleFunc("PATCH /api/groups/{groupJID}", server.publicSetGroupName)
 	mux.HandleFunc("POST /api/groups/{groupJID}/participants", server.publicUpdateGroupParticipants)
@@ -758,9 +853,13 @@ func (s *Server) sendTextForInstance(w http.ResponseWriter, r *http.Request, ins
 		return
 	}
 	var payload struct {
-		Recipient string       `json:"recipient"`
-		Message   string       `json:"message"`
-		Options   *sendOptions `json:"options,omitempty"`
+		Recipient   string               `json:"recipient"`
+		Message     string               `json:"message"`
+		Options     *sendOptions         `json:"options,omitempty"`
+		ReplyTo     *engine.ReplyOptions `json:"replyTo,omitempty"`
+		Mentions    []string             `json:"mentions,omitempty"`
+		Forwarded   bool                 `json:"forwarded,omitempty"`
+		LinkPreview bool                 `json:"linkPreview,omitempty"`
 	}
 	if err := decodeJSON(w, r, &payload); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request")
@@ -771,7 +870,16 @@ func (s *Server) sendTextForInstance(w http.ResponseWriter, r *http.Request, ins
 		return
 	}
 	defer stopPresence()
-	result, err := s.sender.SendText(r.Context(), instanceID, payload.Recipient, payload.Message)
+	messageOptions := engine.MessageOptions{ReplyTo: payload.ReplyTo, Mentions: payload.Mentions, Forwarded: payload.Forwarded, LinkPreview: payload.LinkPreview}
+	var result engine.SentMessage
+	var err error
+	if advanced, supported := s.sender.(AdvancedMessageSender); supported {
+		result, err = advanced.SendTextAdvanced(r.Context(), instanceID, payload.Recipient, payload.Message, messageOptions)
+	} else if payload.ReplyTo != nil || len(payload.Mentions) > 0 || payload.Forwarded || payload.LinkPreview {
+		err = errors.New("advanced message options are unavailable")
+	} else {
+		result, err = s.sender.SendText(r.Context(), instanceID, payload.Recipient, payload.Message)
+	}
 	if errors.Is(err, engine.ErrNotConnected) {
 		writeError(w, http.StatusConflict, err.Error())
 		return

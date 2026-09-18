@@ -9,27 +9,67 @@ import (
 
 func (s *Server) publicSendLocation(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
-		Recipient string       `json:"recipient"`
-		Options   *sendOptions `json:"options,omitempty"`
+		Recipient string               `json:"recipient"`
+		Options   *sendOptions         `json:"options,omitempty"`
+		ReplyTo   *engine.ReplyOptions `json:"replyTo,omitempty"`
+		Mentions  []string             `json:"mentions,omitempty"`
+		Forwarded bool                 `json:"forwarded,omitempty"`
 		engine.LocationPayload
 	}
 	s.sendStructuredJSON(w, r, &payload, &payload.Recipient, &payload.Options, func(instanceID string) (engine.SentMessage, error) {
 		if err := engine.ValidateLocation(&payload.LocationPayload); err != nil {
 			return engine.SentMessage{}, err
 		}
+		if advanced, supported := s.structured.(AdvancedStructuredMessageSender); supported {
+			return advanced.SendLocationAdvanced(r.Context(), instanceID, payload.Recipient, payload.LocationPayload, engine.MessageOptions{ReplyTo: payload.ReplyTo, Mentions: payload.Mentions, Forwarded: payload.Forwarded})
+		}
+		if payload.ReplyTo != nil || len(payload.Mentions) > 0 || payload.Forwarded {
+			return engine.SentMessage{}, errors.New("advanced message options are unavailable")
+		}
 		return s.structured.SendLocation(r.Context(), instanceID, payload.Recipient, payload.LocationPayload)
+	})
+}
+
+func (s *Server) publicSendLiveLocation(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		Recipient string               `json:"recipient"`
+		Options   *sendOptions         `json:"options,omitempty"`
+		ReplyTo   *engine.ReplyOptions `json:"replyTo,omitempty"`
+		Mentions  []string             `json:"mentions,omitempty"`
+		Forwarded bool                 `json:"forwarded,omitempty"`
+		engine.LiveLocationPayload
+	}
+	s.sendStructuredJSON(w, r, &payload, &payload.Recipient, &payload.Options, func(instanceID string) (engine.SentMessage, error) {
+		if err := engine.ValidateLiveLocation(&payload.LiveLocationPayload); err != nil {
+			return engine.SentMessage{}, err
+		}
+		sender, supported := s.structured.(LiveLocationSender)
+		if !supported {
+			return engine.SentMessage{}, errors.New("live location is not supported by the configured engine")
+		}
+		w.Header().Set("X-Wirely-Experimental", "true")
+		return sender.SendLiveLocation(r.Context(), instanceID, payload.Recipient, payload.LiveLocationPayload, engine.MessageOptions{ReplyTo: payload.ReplyTo, Mentions: payload.Mentions, Forwarded: payload.Forwarded})
 	})
 }
 
 func (s *Server) publicSendContact(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
-		Recipient string       `json:"recipient"`
-		Options   *sendOptions `json:"options,omitempty"`
+		Recipient string               `json:"recipient"`
+		Options   *sendOptions         `json:"options,omitempty"`
+		ReplyTo   *engine.ReplyOptions `json:"replyTo,omitempty"`
+		Mentions  []string             `json:"mentions,omitempty"`
+		Forwarded bool                 `json:"forwarded,omitempty"`
 		engine.ContactPayload
 	}
 	s.sendStructuredJSON(w, r, &payload, &payload.Recipient, &payload.Options, func(instanceID string) (engine.SentMessage, error) {
 		if err := engine.ValidateContact(&payload.ContactPayload); err != nil {
 			return engine.SentMessage{}, err
+		}
+		if advanced, supported := s.structured.(AdvancedStructuredMessageSender); supported {
+			return advanced.SendContactAdvanced(r.Context(), instanceID, payload.Recipient, payload.ContactPayload, engine.MessageOptions{ReplyTo: payload.ReplyTo, Mentions: payload.Mentions, Forwarded: payload.Forwarded})
+		}
+		if payload.ReplyTo != nil || len(payload.Mentions) > 0 || payload.Forwarded {
+			return engine.SentMessage{}, errors.New("advanced message options are unavailable")
 		}
 		return s.structured.SendContact(r.Context(), instanceID, payload.Recipient, payload.ContactPayload)
 	})

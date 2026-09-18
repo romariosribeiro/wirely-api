@@ -1,0 +1,4 @@
+meta { name: Group permissions; type: http; seq: 3 }
+patch { url: {{baseUrl}}/api/groups/{{groupJid}}/permissions; body: json; auth: bearer }
+auth:bearer { token: {{token}} }
+body:json { {"announce":true,"locked":true} }

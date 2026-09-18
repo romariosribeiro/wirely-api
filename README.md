@@ -33,6 +33,9 @@ written in Go and the panel uses React, TypeScript, and Vite.
 - Automatic reconnection for paired sessions
 - Per-instance API authentication via SHA-256 hashes, with AES-256-GCM encrypted token copies for administrator display
 - Text, location, contact, poll, reaction, plus unified image, video, audio, document, and sticker sending through the Bearer-authenticated API
+- Replies, mentions, forwarding, link previews, view-once media, disappearing messages, and experimental live location
+- Text, image, and video Status/Stories publishing
+- Global/contact presence control with webhook and authenticated SSE updates
 - Persistent per-instance message queue with scheduling, idempotency, automatic retries, cancellation, and manual retry
 - Built-in API playground for testing all supported message types
 - Integrated API reference with cURL, Laravel, Node.js, and Python examples
@@ -42,7 +45,7 @@ written in Go and the panel uses React, TypeScript, and Vite.
 - Per-instance signed webhooks with automatic retries and delivery logs
 - Per-instance activity history with filters, pagination, live refresh, and manual retry
 - Administrator inbox with WhatsApp contacts, unread counters, chat history, and direct or group replies
-- Group management with creation, participants, administrators, invite rotation, and invite joining
+- Advanced group management with descriptions, photos, permissions, join approval, pending requests, participants, administrators, invite rotation, joining, and leaving
 - WhatsApp user management with avatar lookup, synced contacts, user details, block list, blocking, and unblocking
 - WhatsApp profile management for name, about, photo, and privacy settings
 - Operational metrics dashboard with 24-hour, 7-day, and 30-day views
@@ -50,6 +53,7 @@ written in Go and the panel uses React, TypeScript, and Vite.
 - Persistent administrative audit trail, login lockout, and per-instance API rate limiting
 - Daily automatic backups, owner-only panel restore, downloads, retention, and pre-restore safety copies
 - Complete OpenAPI coverage for public and administrative routes
+- Dependency-free PHP SDK and ready-to-import Postman and Bruno collections
 - Health endpoint at `GET /api/health`
 - Shell installer and hardened systemd service
 - Dashboard update card with release notes, automatic backup, SHA-256 verification, and binary rollback
@@ -202,6 +206,9 @@ available at `GET /openapi.json` and `GET /api/openapi.json`.
 | Contact | `POST /api/send/contact` | JSON with `recipient`, `fullName`, `phone`, and optional `organization` |
 | Poll | `POST /api/send/poll` | JSON with `recipient`, `question`, `choices`, and `maxAnswer` |
 | Reaction | `POST /api/send/reaction` | JSON with `recipient`, `messageId`, `reaction`, and optional target metadata |
+| Live location | `POST /api/send/location/live` | Experimental JSON update with coordinates and sequence |
+| Text Status | `POST /api/status/text` | JSON with text and optional ARGB colors/font |
+| Media Status | `POST /api/status/media` | Multipart image or video |
 
 Message and chat actions use the same instance Bearer token:
 
@@ -209,12 +216,14 @@ Message and chat actions use the same instance Bearer token:
 | --- | --- | --- |
 | Delete for everyone | `POST /api/messages/delete` | `chat`, `messageId`, and optional group `participant` |
 | Edit text | `POST /api/messages/edit` | `chat`, `messageId`, and `message` |
+| Forward | `POST /api/messages/forward` | Source `chat`, `messageId`, and destination `recipient` |
 | Mark as read | `POST /api/messages/read` | `chat`, `messageIds`, and optional group `participant` |
 | Message status | `GET /api/messages/{messageID}/status` | No body |
 | Archive or unarchive | `POST /api/chats/archive` | `chat` and optional `archived` |
 | Mute | `POST /api/chats/mute` | `chat` and optional `durationSeconds`; zero means indefinitely |
 | Pin | `POST /api/chats/pin` | `chat` |
 | Unpin | `POST /api/chats/unpin` | `chat` |
+| Disappearing messages | `PUT /api/chats/disappearing` | `chat` and `duration`: `off`, `24h`, `7d`, or `90d` |
 
 `chat` accepts an international phone number without `+` or a WhatsApp chat
 JID. Message status is resolved from the latest persisted WhatsApp receipt and
@@ -238,6 +247,42 @@ Synchronous sends accept optional `options` with `presence` set to
 `composing` or `recording` and `delay` between `0` and `60000`
 milliseconds. Wirely publishes the chat presence, waits, sends the message,
 and clears the status with `paused`.
+
+Text, location, contact, and media requests can include `replyTo`, `mentions`,
+and `forwarded`. Text also accepts `linkPreview`; image and video media accept
+`viewOnce`. For multipart media, send the shared advanced fields as JSON in
+`messageOptions`.
+
+## Presence and real-time events
+
+- `POST /api/presence` sets the instance to `available` or `unavailable`.
+- `POST /api/presence/subscribe` subscribes to a contact's presence.
+- `GET /api/presence/{phone}` returns the last cached state.
+- `GET /api/events` opens an authenticated Server-Sent Events stream.
+
+Filter SSE events with `?events=message.received,presence.updated`. Wirely sends
+a heartbeat every 15 seconds and a 3-second browser reconnection hint. Use SSE
+for live dashboards and webhooks for durable server-to-server delivery.
+
+```bash
+curl -N 'http://localhost:8080/api/events?events=message.received,presence.updated' \
+  -H 'Authorization: Bearer wly_your_token'
+```
+
+## SDK and API collections
+
+The dependency-free PHP 8.1 client is in [`sdk/php`](sdk/php). The importable
+Postman collection is [`collections/wirely.postman_collection.json`](collections/wirely.postman_collection.json),
+and the Bruno collection is in [`collections/bruno/wirely`](collections/bruno/wirely).
+
+```php
+use Wirely\WirelyClient;
+
+$wirely = new WirelyClient('http://localhost:8080', 'wly_SEU_TOKEN');
+$wirely->sendText('5511999999999', 'Olá pelo SDK', [
+    'options' => ['presence' => 'composing', 'delay' => 1200],
+]);
+```
 
 ### Text
 

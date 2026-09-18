@@ -55,6 +55,8 @@ type Manager struct {
 
 	eventMu      sync.RWMutex
 	eventHandler EventHandler
+	presenceMu   sync.RWMutex
+	presences    map[string]PresenceState
 }
 type session struct {
 	id        string
@@ -82,6 +84,7 @@ func NewManager(dataDirectory string, store *storage.Store) (*Manager, error) {
 		store:          store,
 		sessions:       make(map[string]*session),
 		mediaDownloads: make(chan struct{}, 2),
+		presences:      make(map[string]PresenceState),
 	}, nil
 }
 
@@ -576,6 +579,7 @@ func (m *Manager) handleEvent(current *session, event any) {
 	case *events.Receipt:
 		m.emit(receiptEvent(current.id, value))
 	case *events.Presence:
+		m.rememberPresence(current.id, value)
 		m.emit(presenceEvent(current.id, value))
 	case *events.ChatPresence:
 		m.emit(chatPresenceEvent(current.id, value))

@@ -1,0 +1,4 @@
+meta { name: Send text; type: http; seq: 1 }
+post { url: {{baseUrl}}/api/send/text; body: json; auth: bearer }
+auth:bearer { token: {{token}} }
+body:json { {"recipient":"5511999999999","message":"Olá pelo Bruno","options":{"presence":"composing","delay":1200}} }

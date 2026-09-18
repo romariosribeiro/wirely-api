@@ -7,8 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"go.mau.fi/whatsmeow/proto/waE2E"
-	"google.golang.org/protobuf/proto"
+	"go.mau.fi/whatsmeow/types"
 )
 
 var ErrNotConnected = errors.New("instance is not connected")
@@ -21,6 +20,10 @@ type SentMessage struct {
 }
 
 func (m *Manager) SendText(ctx context.Context, id, recipient, message string) (SentMessage, error) {
+	return m.SendTextAdvanced(ctx, id, recipient, message, MessageOptions{})
+}
+
+func (m *Manager) SendTextAdvanced(ctx context.Context, id, recipient, message string, options MessageOptions) (SentMessage, error) {
 	current, err := m.get(id)
 	if err != nil {
 		return SentMessage{}, err
@@ -38,9 +41,11 @@ func (m *Manager) SendText(ctx context.Context, id, recipient, message string) (
 	if err != nil {
 		return SentMessage{}, err
 	}
-	response, err := current.client.SendMessage(ctx, jid, &waE2E.Message{
-		Conversation: proto.String(message),
-	})
+	content, err := textMessage(message, jid, options)
+	if err != nil {
+		return SentMessage{}, err
+	}
+	response, err := current.client.SendMessage(ctx, jid, content)
 	if err != nil {
 		return SentMessage{}, fmt.Errorf("send WhatsApp message: %w", err)
 	}
@@ -49,7 +54,7 @@ func (m *Manager) SendText(ctx context.Context, id, recipient, message string) (
 		timestamp = time.Now().UTC()
 	}
 	m.emit(newEvent("message.sent", id, timestamp, map[string]any{
-		"id": string(response.ID), "chat": jid.String(), "fromMe": true, "isGroup": false, "type": "text", "text": message,
+		"id": string(response.ID), "chat": jid.String(), "fromMe": true, "isGroup": jid.Server == types.GroupServer, "type": "text", "text": message,
 	}))
 	return SentMessage{
 		ID: string(response.ID), Recipient: display,

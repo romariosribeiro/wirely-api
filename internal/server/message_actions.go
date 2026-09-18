@@ -43,6 +43,36 @@ func (s *Server) publicMarkMessagesRead(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+func (s *Server) publicForwardMessage(w http.ResponseWriter, r *http.Request) {
+	instanceID, ok := s.authenticateInstanceRequest(w, r)
+	if !ok {
+		return
+	}
+	if s.forwarder == nil {
+		writeError(w, http.StatusServiceUnavailable, "WhatsApp engine is unavailable")
+		return
+	}
+	var payload struct {
+		Chat      string `json:"chat"`
+		MessageID string `json:"messageId"`
+		Recipient string `json:"recipient"`
+	}
+	if err := decodeJSON(w, r, &payload); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	result, err := s.forwarder.ForwardMessage(r.Context(), instanceID, payload.Chat, payload.MessageID, payload.Recipient)
+	if errors.Is(err, engine.ErrNotConnected) {
+		writeError(w, http.StatusConflict, err.Error())
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusCreated, result)
+}
+
 func (s *Server) handleMessageAction(w http.ResponseWriter, r *http.Request, payload any, action func(string) (engine.MessageActionResult, error)) {
 	instanceID, ok := s.authenticateInstanceRequest(w, r)
 	if !ok {
@@ -118,6 +148,30 @@ func (s *Server) publicPinChat(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) publicUnpinChat(w http.ResponseWriter, r *http.Request) {
 	s.publicSetChatPin(w, r, false)
+}
+
+func (s *Server) publicSetDisappearingMessages(w http.ResponseWriter, r *http.Request) {
+	instanceID, ok := s.authenticateInstanceRequest(w, r)
+	if !ok {
+		return
+	}
+	if s.disappearing == nil {
+		writeError(w, http.StatusServiceUnavailable, "WhatsApp engine is unavailable")
+		return
+	}
+	var payload struct {
+		Chat     string `json:"chat"`
+		Duration string `json:"duration"`
+	}
+	if err := decodeJSON(w, r, &payload); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	result, err := s.disappearing.SetDisappearingMessages(r.Context(), instanceID, payload.Chat, payload.Duration)
+	if writeMessageActionError(w, err) {
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
 }
 
 func (s *Server) publicSetChatPin(w http.ResponseWriter, r *http.Request, pinned bool) {

@@ -1,0 +1,23 @@
+{
+  "info": {"name": "Wirely API", "description": "Bearer-authenticated Wirely API examples", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+  "variable": [{"key":"baseUrl","value":"http://localhost:8080"},{"key":"token","value":"wly_SEU_TOKEN"},{"key":"groupJid","value":"120363000000000000@g.us"},{"key":"messageId","value":"3EB0ABC123"}],
+  "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{token}}","type":"string"}]},
+  "item": [
+    {"name":"Messages","item":[
+      {"name":"Send text","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"recipient\": \"5511999999999\",\n  \"message\": \"Olá pelo Wirely\",\n  \"linkPreview\": true,\n  \"options\": {\"presence\": \"composing\", \"delay\": 1200}\n}"},"url":"{{baseUrl}}/api/send/text"}},
+      {"name":"Send media","request":{"method":"POST","body":{"mode":"formdata","formdata":[{"key":"recipient","value":"5511999999999","type":"text"},{"key":"type","value":"image","type":"text"},{"key":"viewOnce","value":"false","type":"text"},{"key":"file","type":"file","src":""}]},"url":"{{baseUrl}}/api/send/media"}},
+      {"name":"Forward","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"chat\":\"5511999999999\",\"messageId\":\"{{messageId}}\",\"recipient\":\"5511888888888\"}"},"url":"{{baseUrl}}/api/messages/forward"}},
+      {"name":"Live location","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"recipient\":\"5511999999999\",\"latitude\":-23.5505,\"longitude\":-46.6333,\"sequence\":1}"},"url":"{{baseUrl}}/api/send/location/live"}}
+    ]},
+    {"name":"Presence and events","item":[
+      {"name":"Subscribe presence","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"phone\":\"5511999999999\"}"},"url":"{{baseUrl}}/api/presence/subscribe"}},
+      {"name":"SSE stream","request":{"method":"GET","url":"{{baseUrl}}/api/events?events=message.received,presence.updated"}}
+    ]},
+    {"name":"Status","item":[{"name":"Send text status","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"text\":\"Novidade no Wirely\",\"background\":4278190335,\"textColor\":4294967295,\"font\":0}"},"url":"{{baseUrl}}/api/status/text"}}]},
+    {"name":"Groups","item":[
+      {"name":"Set description","request":{"method":"PATCH","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"description\":\"Grupo oficial\"}"},"url":"{{baseUrl}}/api/groups/{{groupJid}}/description"}},
+      {"name":"Permissions","request":{"method":"PATCH","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"announce\":true,\"locked\":true}"},"url":"{{baseUrl}}/api/groups/{{groupJid}}/permissions"}},
+      {"name":"Join requests","request":{"method":"GET","url":"{{baseUrl}}/api/groups/{{groupJid}}/join-requests"}}
+    ]}
+  ]
+}

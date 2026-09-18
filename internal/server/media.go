@@ -85,7 +85,12 @@ func readMediaRequest(w http.ResponseWriter, r *http.Request) (engine.MediaPaylo
 		mimeType = detected
 	}
 	voice, _ := strconv.ParseBool(r.FormValue("voice"))
-	media := engine.MediaPayload{Kind: kind, Data: data, MIMEType: mimeType, FileName: header.Filename, Caption: r.FormValue("caption"), Voice: voice}
+	viewOnce, _ := strconv.ParseBool(r.FormValue("viewOnce"))
+	messageOptions, err := parseMultipartMessageOptions(r.FormValue("messageOptions"))
+	if err != nil {
+		return engine.MediaPayload{}, "", http.StatusUnprocessableEntity, err
+	}
+	media := engine.MediaPayload{Kind: kind, Data: data, MIMEType: mimeType, FileName: header.Filename, Caption: r.FormValue("caption"), Voice: voice, ViewOnce: viewOnce, Options: messageOptions}
 	if err := engine.ValidateMedia(&media); err != nil {
 		return engine.MediaPayload{}, "", http.StatusUnprocessableEntity, err
 	}

@@ -37,6 +37,23 @@ func parseMultipartSendOptions(value string) (*sendOptions, error) {
 	return &options, nil
 }
 
+func parseMultipartMessageOptions(value string) (engine.MessageOptions, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return engine.MessageOptions{}, nil
+	}
+	var options engine.MessageOptions
+	decoder := json.NewDecoder(strings.NewReader(value))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&options); err != nil {
+		return engine.MessageOptions{}, errors.New("messageOptions must be valid JSON")
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		return engine.MessageOptions{}, errors.New("messageOptions must contain one JSON object")
+	}
+	return options, nil
+}
+
 func validateSendOptions(options *sendOptions) error {
 	if options == nil {
 		return nil

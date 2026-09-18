@@ -334,7 +334,7 @@ const openAPISpec = `{
   }
 }`
 
-func openAPI(w http.ResponseWriter, _ *http.Request) {
+func openAPIBase(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "public, max-age=300")
 	w.WriteHeader(http.StatusOK)

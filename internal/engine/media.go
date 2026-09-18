@@ -12,6 +12,7 @@ import (
 
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
+	"go.mau.fi/whatsmeow/types"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -33,6 +34,8 @@ type MediaPayload struct {
 	FileName string
 	Caption  string
 	Voice    bool
+	ViewOnce bool
+	Options  MessageOptions
 }
 
 func (m *Manager) SendMedia(ctx context.Context, id, recipient string, media MediaPayload) (SentMessage, error) {
@@ -64,7 +67,14 @@ func (m *Manager) SendMedia(ctx context.Context, id, recipient string, media Med
 	if err != nil {
 		return SentMessage{}, fmt.Errorf("upload WhatsApp media: %w", err)
 	}
-	response, err := current.client.SendMessage(ctx, jid, uploadedMessage(media, upload))
+	message := uploadedMessage(media, upload)
+	if err := applyMessageOptions(message, jid, media.Options); err != nil {
+		return SentMessage{}, err
+	}
+	if media.ViewOnce {
+		message = &waE2E.Message{ViewOnceMessageV2: &waE2E.FutureProofMessage{Message: message}}
+	}
+	response, err := current.client.SendMessage(ctx, jid, message)
 	if err != nil {
 		return SentMessage{}, fmt.Errorf("send WhatsApp %s: %w", media.Kind, err)
 	}
@@ -73,7 +83,7 @@ func (m *Manager) SendMedia(ctx context.Context, id, recipient string, media Med
 		timestamp = time.Now().UTC()
 	}
 	m.emit(newEvent("message.sent", id, timestamp, map[string]any{
-		"id": string(response.ID), "chat": jid.String(), "fromMe": true, "isGroup": false,
+		"id": string(response.ID), "chat": jid.String(), "fromMe": true, "isGroup": jid.Server == types.GroupServer,
 		"type": string(media.Kind), "text": media.Caption, "mimetype": media.MIMEType,
 		"fileName": media.FileName, "fileSize": len(media.Data),
 	}))
@@ -101,6 +111,9 @@ func ValidateMedia(media *MediaPayload) error {
 			return errors.New("video type requires a video file")
 		}
 	case MediaAudio:
+		if media.ViewOnce {
+			return errors.New("viewOnce is only supported for image or video")
+		}
 		if !strings.HasPrefix(media.MIMEType, "audio/") && media.MIMEType != "application/ogg" {
 			return errors.New("audio endpoint requires an audio file")
 		}
@@ -108,7 +121,13 @@ func ValidateMedia(media *MediaPayload) error {
 			return errors.New("voice messages require an OGG/Opus audio file")
 		}
 	case MediaDocument:
+		if media.ViewOnce {
+			return errors.New("viewOnce is only supported for image or video")
+		}
 	case MediaSticker:
+		if media.ViewOnce {
+			return errors.New("viewOnce is only supported for image or video")
+		}
 		if media.MIMEType != "image/webp" {
 			return errors.New("sticker type requires a WebP file")
 		}

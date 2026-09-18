@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var ErrChatMessageNotFound = fmt.Errorf("chat message not found")
+
 type ChatMessage struct {
 	EventID   string         `json:"eventId"`
 	MessageID string         `json:"messageId,omitempty"`
@@ -170,6 +172,17 @@ ORDER BY timestamp DESC, event_id DESC LIMIT ? OFFSET ?`, instanceID, chat, page
 		items = append(items, item)
 	}
 	return items, total, rows.Err()
+}
+
+func (s *Store) FindChatMessage(ctx context.Context, instanceID, chat, messageID string) (ChatMessage, error) {
+	row := s.db.QueryRowContext(ctx, `SELECT event_id, message_id, event, chat, sender, from_me, is_group, push_name, message_type, text, timestamp, data_json
+FROM chat_messages WHERE instance_id = ? AND chat = ? AND message_id = ?
+ORDER BY timestamp DESC LIMIT 1`, instanceID, strings.TrimSpace(chat), strings.TrimSpace(messageID))
+	item, err := scanChatMessage(row)
+	if err == sql.ErrNoRows {
+		return ChatMessage{}, ErrChatMessageNotFound
+	}
+	return item, err
 }
 
 func scanChatMessage(scanner interface{ Scan(...any) error }) (ChatMessage, error) {

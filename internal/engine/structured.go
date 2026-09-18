@@ -21,6 +21,17 @@ type LocationPayload struct {
 	Address   string  `json:"address,omitempty"`
 }
 
+type LiveLocationPayload struct {
+	Latitude   float64 `json:"latitude"`
+	Longitude  float64 `json:"longitude"`
+	Accuracy   uint32  `json:"accuracy,omitempty"`
+	Speed      float32 `json:"speed,omitempty"`
+	Bearing    uint32  `json:"bearing,omitempty"`
+	Caption    string  `json:"caption,omitempty"`
+	Sequence   int64   `json:"sequence,omitempty"`
+	TimeOffset uint32  `json:"timeOffset,omitempty"`
+}
+
 type ContactPayload struct {
 	FullName     string `json:"fullName"`
 	Organization string `json:"organization,omitempty"`
@@ -41,6 +52,10 @@ type ReactionPayload struct {
 }
 
 func (m *Manager) SendLocation(ctx context.Context, id, recipient string, payload LocationPayload) (SentMessage, error) {
+	return m.SendLocationAdvanced(ctx, id, recipient, payload, MessageOptions{})
+}
+
+func (m *Manager) SendLocationAdvanced(ctx context.Context, id, recipient string, payload LocationPayload, options MessageOptions) (SentMessage, error) {
 	if err := ValidateLocation(&payload); err != nil {
 		return SentMessage{}, err
 	}
@@ -48,19 +63,56 @@ func (m *Manager) SendLocation(ctx context.Context, id, recipient string, payloa
 		DegreesLatitude: proto.Float64(payload.Latitude), DegreesLongitude: proto.Float64(payload.Longitude),
 		Name: proto.String(payload.Name), Address: proto.String(payload.Address),
 	}}
-	return m.sendStructured(ctx, id, recipient, "location", message, map[string]any{
+	return m.sendStructured(ctx, id, recipient, "location", message, options, map[string]any{
 		"latitude": payload.Latitude, "longitude": payload.Longitude, "name": payload.Name, "address": payload.Address,
 	})
 }
 
+func (m *Manager) SendLiveLocation(ctx context.Context, id, recipient string, payload LiveLocationPayload, options MessageOptions) (SentMessage, error) {
+	if err := ValidateLiveLocation(&payload); err != nil {
+		return SentMessage{}, err
+	}
+	message := &waE2E.Message{LiveLocationMessage: &waE2E.LiveLocationMessage{
+		DegreesLatitude: proto.Float64(payload.Latitude), DegreesLongitude: proto.Float64(payload.Longitude),
+		AccuracyInMeters: proto.Uint32(payload.Accuracy), SpeedInMps: proto.Float32(payload.Speed),
+		DegreesClockwiseFromMagneticNorth: proto.Uint32(payload.Bearing), Caption: proto.String(payload.Caption),
+		SequenceNumber: proto.Int64(payload.Sequence), TimeOffset: proto.Uint32(payload.TimeOffset),
+	}}
+	return m.sendStructured(ctx, id, recipient, "live-location", message, options, map[string]any{
+		"latitude": payload.Latitude, "longitude": payload.Longitude, "accuracy": payload.Accuracy,
+		"speed": payload.Speed, "bearing": payload.Bearing, "caption": payload.Caption,
+		"sequence": payload.Sequence, "timeOffset": payload.TimeOffset, "experimental": true,
+	})
+}
+
+func ValidateLiveLocation(payload *LiveLocationPayload) error {
+	if payload == nil || math.IsNaN(payload.Latitude) || math.IsNaN(payload.Longitude) || payload.Latitude < -90 || payload.Latitude > 90 || payload.Longitude < -180 || payload.Longitude > 180 {
+		return errors.New("latitude must be between -90 and 90 and longitude between -180 and 180")
+	}
+	if payload.Bearing > 359 {
+		return errors.New("bearing must be between 0 and 359")
+	}
+	if payload.Speed < 0 || math.IsNaN(float64(payload.Speed)) || math.IsInf(float64(payload.Speed), 0) {
+		return errors.New("speed must be zero or greater")
+	}
+	if utf8.RuneCountInString(payload.Caption) > 1024 {
+		return errors.New("caption must have at most 1024 characters")
+	}
+	return nil
+}
+
 func (m *Manager) SendContact(ctx context.Context, id, recipient string, payload ContactPayload) (SentMessage, error) {
+	return m.SendContactAdvanced(ctx, id, recipient, payload, MessageOptions{})
+}
+
+func (m *Manager) SendContactAdvanced(ctx context.Context, id, recipient string, payload ContactPayload, options MessageOptions) (SentMessage, error) {
 	if err := ValidateContact(&payload); err != nil {
 		return SentMessage{}, err
 	}
 	message := &waE2E.Message{ContactMessage: &waE2E.ContactMessage{
 		DisplayName: proto.String(payload.FullName), Vcard: proto.String(contactVCard(payload)),
 	}}
-	return m.sendStructured(ctx, id, recipient, "contact", message, map[string]any{
+	return m.sendStructured(ctx, id, recipient, "contact", message, options, map[string]any{
 		"contactName": payload.FullName, "contactPhone": "+" + payload.Phone,
 	})
 }
@@ -78,7 +130,7 @@ func (m *Manager) SendPoll(ctx context.Context, id, recipient string, payload Po
 		return SentMessage{}, err
 	}
 	message := current.client.BuildPollCreation(payload.Question, payload.Options, payload.MaxAnswer)
-	return m.sendStructuredWithSession(ctx, id, current, jid, display, "poll", message, map[string]any{
+	return m.sendStructuredWithSession(ctx, id, current, jid, display, "poll", message, MessageOptions{}, map[string]any{
 		"question": payload.Question, "options": payload.Options, "maxAnswer": payload.MaxAnswer,
 	})
 }
@@ -109,12 +161,12 @@ func (m *Manager) SendReaction(ctx context.Context, id, recipient string, payloa
 		}
 	}
 	message := current.client.BuildReaction(chat, sender, types.MessageID(payload.MessageID), payload.Reaction)
-	return m.sendStructuredWithSession(ctx, id, current, chat, display, "reaction", message, map[string]any{
+	return m.sendStructuredWithSession(ctx, id, current, chat, display, "reaction", message, MessageOptions{}, map[string]any{
 		"targetMessageId": payload.MessageID, "reaction": payload.Reaction,
 	})
 }
 
-func (m *Manager) sendStructured(ctx context.Context, id, recipient, kind string, message *waE2E.Message, fields map[string]any) (SentMessage, error) {
+func (m *Manager) sendStructured(ctx context.Context, id, recipient, kind string, message *waE2E.Message, options MessageOptions, fields map[string]any) (SentMessage, error) {
 	current, err := m.connectedSession(id)
 	if err != nil {
 		return SentMessage{}, err
@@ -123,10 +175,13 @@ func (m *Manager) sendStructured(ctx context.Context, id, recipient, kind string
 	if err != nil {
 		return SentMessage{}, err
 	}
-	return m.sendStructuredWithSession(ctx, id, current, jid, display, kind, message, fields)
+	return m.sendStructuredWithSession(ctx, id, current, jid, display, kind, message, options, fields)
 }
 
-func (m *Manager) sendStructuredWithSession(ctx context.Context, id string, current *session, jid types.JID, display, kind string, message *waE2E.Message, fields map[string]any) (SentMessage, error) {
+func (m *Manager) sendStructuredWithSession(ctx context.Context, id string, current *session, jid types.JID, display, kind string, message *waE2E.Message, options MessageOptions, fields map[string]any) (SentMessage, error) {
+	if err := applyMessageOptions(message, jid, options); err != nil {
+		return SentMessage{}, err
+	}
 	response, err := current.client.SendMessage(ctx, jid, message)
 	if err != nil {
 		return SentMessage{}, fmt.Errorf("send WhatsApp %s: %w", kind, err)

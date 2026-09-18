@@ -34,13 +34,14 @@ func TestOpenAPISpec(t *testing.T) {
 			t.Fatalf("unexpected OpenAPI version %q", spec.OpenAPI)
 		}
 		for _, endpoint := range []string{"/api/send/text", "/api/send/media", "/api/send/location", "/api/send/contact", "/api/send/poll", "/api/send/reaction", "/api/messages/{messageID}/media",
+			"/api/send/location/live", "/api/messages/forward", "/api/chats/disappearing", "/api/presence", "/api/presence/subscribe", "/api/presence/{phone}", "/api/events", "/api/status/text", "/api/status/media",
 			"/api/messages/delete", "/api/messages/edit", "/api/messages/read", "/api/messages/{messageID}/status", "/api/chats/archive", "/api/chats/mute", "/api/chats/pin", "/api/chats/unpin",
 			"/api/newsletters", "/api/newsletters/info", "/api/newsletters/invite", "/api/newsletters/messages", "/api/newsletters/subscribe",
 			"/api/labels/chat", "/api/labels/message", "/api/labels/{labelID}", "/api/communities", "/api/communities/groups",
 			"/api/instance", "/api/instance/connect", "/api/instance/disconnect", "/api/instance/logout", "/api/instance/pair", "/api/instance/proxy", "/api/instance/qr", "/api/instance/status", "/api/contacts/check",
 			"/api/user/avatar", "/api/user/block", "/api/user/blocklist", "/api/user/contacts", "/api/user/info", "/api/user/unblock",
 			"/api/webhook/test", "/api/webhook/jobs/{eventID}", "/api/webhook/deliveries",
-			"/api/groups", "/api/groups/join", "/api/groups/{groupJID}", "/api/groups/{groupJID}/participants", "/api/groups/{groupJID}/invite", "/api/profile", "/api/profile/photo", "/api/profile/privacy",
+			"/api/groups", "/api/groups/join", "/api/groups/{groupJID}", "/api/groups/{groupJID}/participants", "/api/groups/{groupJID}/invite", "/api/groups/{groupJID}/description", "/api/groups/{groupJID}/photo", "/api/groups/{groupJID}/leave", "/api/groups/{groupJID}/permissions", "/api/groups/{groupJID}/join-approval", "/api/groups/{groupJID}/join-requests", "/api/profile", "/api/profile/photo", "/api/profile/privacy",
 			"/api/queue/text", "/api/queue/media", "/api/queue/{jobID}", "/api/queue/{jobID}/retry",
 			"/metrics", "/api/auth/login", "/api/auth/me", "/api/auth/logout", "/api/auth/password",
 			"/api/users", "/api/users/{userID}", "/api/users/{userID}/password",

@@ -5,6 +5,24 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-09-18
+
+- Authenticated SSE stream with filtering, heartbeat, and reconnect hint.
+- Dependency-free PHP 8.1 SDK plus Postman and Bruno collections.
+- Consolidated PT/EN documentation and OpenAPI coverage.
+
+## [0.13.0] - 2026-09-18
+
+- Text, image, and video Status/Stories publishing.
+- Advanced group descriptions, photos, permissions, join approval, request moderation, and leaving.
+
+## [0.12.0] - 2026-09-18
+
+- Replies, mentions, forwarding, link previews, and view-once image/video.
+- Disappearing-message timers, presence APIs/events, and experimental live location.
+
+## [0.11.0] - 2026-09-18
+
 ### Added
 
 - Portuguese and English panel localization with a persistent PT/EN selector,
@@ -79,4 +97,8 @@ All notable changes to Wirely API are documented here. The project follows
 - Each instance continues to own a single webhook configuration.
 
 [Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.9.0...HEAD
+[0.14.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.14.0
+[0.13.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.13.0
+[0.12.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.12.0
+[0.11.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.11.0
 [0.9.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.9.0

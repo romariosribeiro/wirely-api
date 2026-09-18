@@ -134,6 +134,31 @@ func (m *Manager) PinChat(ctx context.Context, id, chat string, pinned bool) (Ch
 	return ChatActionResult{Chat: jid.String(), Action: action, Status: status}, nil
 }
 
+func (m *Manager) SetDisappearingMessages(ctx context.Context, id, chat, duration string) (ChatActionResult, error) {
+	current, jid, err := m.chatActionSession(id, chat)
+	if err != nil {
+		return ChatActionResult{}, err
+	}
+	var timer time.Duration
+	status := "disabled"
+	switch strings.ToLower(strings.TrimSpace(duration)) {
+	case "off", "disabled", "0":
+		timer = 0
+	case "24h", "1d":
+		timer, status = 24*time.Hour, "24h"
+	case "7d":
+		timer, status = 7*24*time.Hour, "7d"
+	case "90d":
+		timer, status = 90*24*time.Hour, "90d"
+	default:
+		return ChatActionResult{}, errors.New("duration must be off, 24h, 7d or 90d")
+	}
+	if err := current.client.SetDisappearingTimer(ctx, jid, timer, time.Now()); err != nil {
+		return ChatActionResult{}, fmt.Errorf("set WhatsApp disappearing messages: %w", err)
+	}
+	return ChatActionResult{Chat: jid.String(), Action: "disappearing", Status: status}, nil
+}
+
 func (m *Manager) messageActionSession(id, chat, messageID string) (*session, types.JID, error) {
 	messageID = strings.TrimSpace(messageID)
 	if messageID == "" || len(messageID) > 200 {

@@ -36,6 +36,12 @@ type Group struct {
 	Participants         []GroupParticipant `json:"participants"`
 }
 
+type GroupJoinRequest struct {
+	JID         string `json:"jid"`
+	Phone       string `json:"phone,omitempty"`
+	RequestedAt string `json:"requestedAt"`
+}
+
 func (m *Manager) ListGroups(ctx context.Context, id string) ([]Group, error) {
 	current, err := m.connectedSession(id)
 	if err != nil {
@@ -174,6 +180,138 @@ func (m *Manager) JoinGroup(ctx context.Context, id, code string) (string, error
 		return "", fmt.Errorf("join WhatsApp group: %w", err)
 	}
 	return jid.String(), nil
+}
+
+func (m *Manager) SetGroupDescription(ctx context.Context, id, groupJID, description string) error {
+	current, jid, err := m.groupSession(id, groupJID)
+	if err != nil {
+		return err
+	}
+	description = strings.TrimSpace(description)
+	if utf8.RuneCountInString(description) > 2048 {
+		return errors.New("description must have at most 2048 characters")
+	}
+	if err := current.client.SetGroupDescription(ctx, jid, description); err != nil {
+		return fmt.Errorf("set WhatsApp group description: %w", err)
+	}
+	return nil
+}
+
+func (m *Manager) SetGroupPhoto(ctx context.Context, id, groupJID string, photo []byte) (string, error) {
+	current, jid, err := m.groupSession(id, groupJID)
+	if err != nil {
+		return "", err
+	}
+	if len(photo) > 0 {
+		if err := ValidateProfilePhoto(photo); err != nil {
+			return "", err
+		}
+	}
+	pictureID, err := current.client.SetGroupPhoto(ctx, jid, photo)
+	if err != nil {
+		return "", fmt.Errorf("set WhatsApp group photo: %w", err)
+	}
+	return pictureID, nil
+}
+
+func (m *Manager) LeaveGroup(ctx context.Context, id, groupJID string) error {
+	current, jid, err := m.groupSession(id, groupJID)
+	if err != nil {
+		return err
+	}
+	if err := current.client.LeaveGroup(ctx, jid); err != nil {
+		return fmt.Errorf("leave WhatsApp group: %w", err)
+	}
+	return nil
+}
+
+func (m *Manager) SetGroupPermissions(ctx context.Context, id, groupJID string, announce, locked *bool) error {
+	if announce == nil && locked == nil {
+		return errors.New("announce or locked is required")
+	}
+	current, jid, err := m.groupSession(id, groupJID)
+	if err != nil {
+		return err
+	}
+	if announce != nil {
+		if err := current.client.SetGroupAnnounce(ctx, jid, *announce); err != nil {
+			return fmt.Errorf("set WhatsApp group send permission: %w", err)
+		}
+	}
+	if locked != nil {
+		if err := current.client.SetGroupLocked(ctx, jid, *locked); err != nil {
+			return fmt.Errorf("set WhatsApp group edit permission: %w", err)
+		}
+	}
+	return nil
+}
+
+func (m *Manager) SetGroupJoinApproval(ctx context.Context, id, groupJID string, enabled bool) error {
+	current, jid, err := m.groupSession(id, groupJID)
+	if err != nil {
+		return err
+	}
+	if err := current.client.SetGroupJoinApprovalMode(ctx, jid, enabled); err != nil {
+		return fmt.Errorf("set WhatsApp group join approval: %w", err)
+	}
+	return nil
+}
+
+func (m *Manager) ListGroupJoinRequests(ctx context.Context, id, groupJID string) ([]GroupJoinRequest, error) {
+	current, jid, err := m.groupSession(id, groupJID)
+	if err != nil {
+		return nil, err
+	}
+	requests, err := current.client.GetGroupRequestParticipants(ctx, jid)
+	if err != nil {
+		return nil, fmt.Errorf("list WhatsApp group join requests: %w", err)
+	}
+	result := make([]GroupJoinRequest, 0, len(requests))
+	for _, request := range requests {
+		result = append(result, GroupJoinRequest{JID: request.JID.ToNonAD().String(), Phone: request.JID.User, RequestedAt: request.RequestedAt.UTC().Format("2006-01-02T15:04:05Z07:00")})
+	}
+	return result, nil
+}
+
+func (m *Manager) UpdateGroupJoinRequests(ctx context.Context, id, groupJID, action string, participants []string) ([]GroupParticipant, error) {
+	current, jid, err := m.groupSession(id, groupJID)
+	if err != nil {
+		return nil, err
+	}
+	members, err := parseGroupParticipants(participants)
+	if err != nil {
+		return nil, err
+	}
+	var change whatsmeow.ParticipantRequestChange
+	switch strings.ToLower(strings.TrimSpace(action)) {
+	case "approve":
+		change = whatsmeow.ParticipantChangeApprove
+	case "reject":
+		change = whatsmeow.ParticipantChangeReject
+	default:
+		return nil, errors.New("action must be approve or reject")
+	}
+	updated, err := current.client.UpdateGroupRequestParticipants(ctx, jid, members, change)
+	if err != nil {
+		return nil, fmt.Errorf("%s WhatsApp group join requests: %w", change, err)
+	}
+	result := make([]GroupParticipant, 0, len(updated))
+	for _, participant := range updated {
+		result = append(result, mapGroupParticipant(participant))
+	}
+	return result, nil
+}
+
+func (m *Manager) groupSession(id, groupJID string) (*session, types.JID, error) {
+	current, err := m.connectedSession(id)
+	if err != nil {
+		return nil, types.EmptyJID, err
+	}
+	jid, err := parseGroupJID(groupJID)
+	if err != nil {
+		return nil, types.EmptyJID, err
+	}
+	return current, jid, nil
 }
 
 func validateGroupName(name string) (string, error) {

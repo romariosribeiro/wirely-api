@@ -14,6 +14,7 @@ import (
 	"github.com/romariosribeiro/wirely-api/internal/outbox"
 	"github.com/romariosribeiro/wirely-api/internal/server"
 	"github.com/romariosribeiro/wirely-api/internal/storage"
+	"github.com/romariosribeiro/wirely-api/internal/stream"
 	"github.com/romariosribeiro/wirely-api/internal/updater"
 	"github.com/romariosribeiro/wirely-api/internal/webhook"
 )
@@ -68,11 +69,13 @@ func main() {
 		slog.Info("old received media removed", "count", removed)
 	}
 	webhookDispatcher := webhook.NewDispatcher(store)
+	eventHub := stream.New()
 	if err := webhookDispatcher.Start(); err != nil {
 		fail("failed to start webhook delivery queue", err)
 	}
 	defer webhookDispatcher.Close()
 	whatsappManager.SetEventHandler(func(event engine.Event) {
+		eventHub.Publish(event)
 		inserted, saveErr := store.SaveActivityEvent(context.Background(), event.ID, event.InstanceID, event.Event, event.Timestamp, event.Data)
 		if saveErr != nil {
 			slog.Error("failed to persist event", "event_id", event.ID, "event", event.Event, "instance_id", event.InstanceID, "error", saveErr)
@@ -115,6 +118,7 @@ func main() {
 		Store:         store,
 		Engine:        whatsappManager,
 		Webhooks:      webhookDispatcher,
+		Events:        eventHub,
 		Queue:         messageQueue,
 		Backups:       backupManager,
 		Updates:       updateManager,
