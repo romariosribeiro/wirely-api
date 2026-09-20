@@ -5,6 +5,19 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-09-20
+
+- Automatically retry through the VPS direct connection when an instance proxy
+  connection attempt fails, preserving the saved proxy configuration.
+- Expose the selected connection route and proxy fallback in the status API and
+  instance management panel.
+- Track keepalive failures and replaced sessions, and log connection transitions
+  without exposing proxy credentials.
+- Preserve manual disconnect behavior and cancel background reconnects when
+  sessions are closed or deleted.
+- Add regression tests for proxy failures, direct retries, canceled connections,
+  saved configuration, and live socket status.
+
 ## [0.14.2] - 2026-09-18
 
 - Documented required and optional body, path, query, and multipart fields
