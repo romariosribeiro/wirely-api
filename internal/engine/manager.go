@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -33,10 +34,12 @@ var ErrPairingUnavailable = errors.New("pairing code is not available")
 var nonDigits = regexp.MustCompile(`[^0-9]`)
 
 type State struct {
-	Status      string `json:"status"`
-	QRAvailable bool   `json:"qrAvailable"`
-	QRExpiresAt string `json:"qrExpiresAt,omitempty"`
-	LastError   string `json:"lastError,omitempty"`
+	Status          string `json:"status"`
+	QRAvailable     bool   `json:"qrAvailable"`
+	QRExpiresAt     string `json:"qrExpiresAt,omitempty"`
+	LastError       string `json:"lastError,omitempty"`
+	ConnectionRoute string `json:"connectionRoute,omitempty"`
+	ProxyFallback   bool   `json:"proxyFallback,omitempty"`
 }
 
 type ContactCheck struct {
@@ -64,13 +67,16 @@ type session struct {
 	container *sqlstore.Container
 	cancel    context.CancelFunc
 
-	mu         sync.RWMutex
-	status     string
-	qrCode     string
-	qrExpires  time.Time
-	lastError  string
-	connecting bool
-	settings   storage.InstanceSettings
+	mu               sync.RWMutex
+	status           string
+	qrCode           string
+	qrExpires        time.Time
+	lastError        string
+	connecting       bool
+	settings         storage.InstanceSettings
+	proxyConfigured  bool
+	proxyFallback    bool
+	reconnectAllowed bool
 }
 
 func NewManager(dataDirectory string, store *storage.Store) (*Manager, error) {
@@ -131,6 +137,7 @@ func (m *Manager) Connect(id string) error {
 		return nil
 	}
 	current.connecting = true
+	current.reconnectAllowed = true
 	current.lastError = ""
 	current.mu.Unlock()
 	m.setState(current, "connecting", "")
@@ -149,7 +156,7 @@ func (m *Manager) connect(current *session) {
 		go m.consumeQR(current, qrChannel)
 	}
 
-	if err := current.client.Connect(); err != nil {
+	if err := m.connectWithProxyFallback(current, current.client.Connect); err != nil {
 		m.connectionError(current, err)
 	}
 }
@@ -192,6 +199,9 @@ func (m *Manager) Disconnect(id string) error {
 	if err != nil {
 		return err
 	}
+	current.mu.Lock()
+	current.reconnectAllowed = false
+	current.mu.Unlock()
 	current.client.Disconnect()
 	current.mu.Lock()
 	current.connecting = false
@@ -214,6 +224,7 @@ func (m *Manager) Logout(ctx context.Context, id string) error {
 		return fmt.Errorf("logout WhatsApp session: %w", err)
 	}
 	current.mu.Lock()
+	current.reconnectAllowed = false
 	current.connecting = false
 	current.qrCode = ""
 	current.qrExpires = time.Time{}
@@ -283,6 +294,10 @@ func (m *Manager) SetProxy(id, address string) error {
 	if err := current.client.SetProxyAddress(address); err != nil {
 		return fmt.Errorf("configure proxy: %w", err)
 	}
+	current.mu.Lock()
+	current.proxyConfigured = address != ""
+	current.proxyFallback = false
+	current.mu.Unlock()
 	if wasConnected {
 		current.client.Disconnect()
 		return m.Connect(id)
@@ -337,6 +352,9 @@ func (m *Manager) Delete(id string) error {
 	m.mu.Unlock()
 
 	if current != nil {
+		current.mu.Lock()
+		current.reconnectAllowed = false
+		current.mu.Unlock()
 		current.cancel()
 		current.client.Disconnect()
 		if err := current.container.Close(); err != nil {
@@ -369,9 +387,17 @@ func (m *Manager) State(id string) (State, error) {
 	current.mu.RLock()
 	defer current.mu.RUnlock()
 	state := State{
-		Status:      current.status,
-		QRAvailable: current.qrCode != "" && time.Now().UTC().Before(current.qrExpires),
-		LastError:   current.lastError,
+		Status:          current.status,
+		QRAvailable:     current.qrCode != "" && time.Now().UTC().Before(current.qrExpires),
+		LastError:       current.lastError,
+		ConnectionRoute: "direct",
+		ProxyFallback:   current.proxyFallback,
+	}
+	if current.proxyConfigured && !current.proxyFallback {
+		state.ConnectionRoute = "proxy"
+	}
+	if state.Status == "connected" && (!current.client.IsConnected() || !current.client.IsLoggedIn()) {
+		state.Status = "connecting"
 	}
 	if state.QRAvailable {
 		state.QRExpiresAt = current.qrExpires.Format(time.RFC3339)
@@ -435,6 +461,9 @@ func (m *Manager) Close() error {
 
 	var firstError error
 	for _, current := range sessions {
+		current.mu.Lock()
+		current.reconnectAllowed = false
+		current.mu.Unlock()
 		current.cancel()
 		current.client.Disconnect()
 		if err := current.container.Close(); err != nil && firstError == nil {
@@ -488,6 +517,13 @@ func (m *Manager) ensure(ctx context.Context, id string) (*session, error) {
 		_ = container.Close()
 		return nil, fmt.Errorf("configure instance proxy: %w", err)
 	}
+	current.proxyConfigured = proxyAddress != ""
+	current.client.BackgroundEventCtx = sessionContext
+	// Paired sessions retry startup network failures as well as later outages.
+	current.client.InitialAutoReconnect = device.ID != nil
+	current.client.AutoReconnectHook = func(err error) bool {
+		return m.handleReconnectFailure(current, err)
+	}
 	current.client.AddEventHandler(func(event any) {
 		m.handleEvent(current, event)
 	})
@@ -537,17 +573,25 @@ func (m *Manager) handleEvent(current *session, event any) {
 		go func() { _ = current.client.SendPresence(context.Background(), presence) }()
 	case *events.PairSuccess:
 		m.setState(current, "connecting", "")
+	case *events.KeepAliveTimeout:
+		m.setState(current, "connecting", "WhatsApp keepalive timed out")
+	case *events.KeepAliveRestored:
+		if current.client.IsConnected() && current.client.IsLoggedIn() {
+			m.setState(current, "connected", "")
+		}
 	case *events.Disconnected:
 		current.mu.Lock()
 		current.connecting = false
+		reconnecting := current.reconnectAllowed && current.client.Store.ID != nil
 		current.mu.Unlock()
-		if current.client.IsLoggedIn() {
+		if reconnecting {
 			m.setState(current, "connecting", "")
 		} else {
 			m.setState(current, "disconnected", "")
 		}
 	case *events.LoggedOut:
 		current.mu.Lock()
+		current.reconnectAllowed = false
 		current.connecting = false
 		current.qrCode = ""
 		current.qrExpires = time.Time{}
@@ -555,6 +599,12 @@ func (m *Manager) handleEvent(current *session, event any) {
 		m.setState(current, "logged_out", value.Reason.String())
 	case *events.ConnectFailure:
 		m.connectionError(current, fmt.Errorf("%s: %s", value.Reason.String(), value.Message))
+	case *events.StreamReplaced:
+		current.mu.Lock()
+		current.reconnectAllowed = false
+		current.connecting = false
+		current.mu.Unlock()
+		m.setState(current, "disconnected", "WhatsApp session replaced by another connection")
 	case *events.PairError:
 		m.connectionError(current, value.Error)
 	case *events.Message:
@@ -683,6 +733,7 @@ func (m *Manager) setState(current *session, status, lastError string) {
 	current.mu.Unlock()
 	m.persistStatus(current.id, status)
 	if changed {
+		slog.Info("WhatsApp instance state changed", "instance_id", current.id, "status", status)
 		m.emit(newEvent("instance.status", current.id, time.Now().UTC(), map[string]any{
 			"status": status, "lastError": lastError,
 		}))

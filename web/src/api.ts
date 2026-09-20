@@ -39,6 +39,8 @@ export type ConnectionState = {
   qrAvailable: boolean
   qrExpiresAt?: string
   lastError?: string
+  connectionRoute?: 'proxy' | 'direct'
+  proxyFallback?: boolean
 }
 
 export type SentMessage = {

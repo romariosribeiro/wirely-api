@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { request, statusLabel, type Instance, type InstanceSettings, type ProxyConfig, type WebhookConfig } from './api'
+import { request, statusLabel, type ConnectionState, type Instance, type InstanceSettings, type ProxyConfig, type WebhookConfig } from './api'
 
 const eventOptions = [
   { id: 'messages', title: 'Mensagens · todos os eventos', description: 'Recebidas, enviadas, edições, exclusões, reações e confirmações de entrega/leitura.' },
@@ -39,6 +39,7 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
   const [notice, setNotice] = useState('')
   const [loadVersion, setLoadVersion] = useState(0)
   const [proxy, setProxy] = useState<ProxyConfig | null>(null)
+  const [connectionState, setConnectionState] = useState<ConnectionState | null>(null)
   const [proxyURL, setProxyURL] = useState('')
   const [sshHost, setSSHHost] = useState(() => window.location.hostname || 'IP_OU_DOMINIO_DA_VPS')
   const [sshUser, setSSHUser] = useState('ubuntu')
@@ -118,6 +119,16 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
       if (active) setError(reason instanceof Error ? reason.message : 'Falha ao carregar proxy.')
     })
     return () => { active = false }
+  }, [endpoint])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    const refresh = () => request<ConnectionState>(`${endpoint}/state`, { signal: controller.signal })
+      .then((value) => { if (!controller.signal.aborted) setConnectionState(value) })
+      .catch(() => { if (!controller.signal.aborted) setConnectionState(null) })
+    void refresh()
+    const timer = window.setInterval(() => void refresh(), 5000)
+    return () => { controller.abort(); window.clearInterval(timer) }
   }, [endpoint])
 
   function close() {
@@ -336,14 +347,15 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
         <form className="manageSection" onSubmit={(event) => void saveProxy(event)}>
           <div className="manageSectionHeading">
             <div><h3>Proxy da conexão</h3><p>Defina um proxy exclusivo para esta instância.</p></div>
-            {proxy?.configured && <span className="manageProxyBadge">ATIVO</span>}
+            {proxy?.configured && <span className="manageProxyBadge">{connectionState?.proxyFallback ? 'SAÍDA DIRETA' : connectionState?.status === 'connected' && connectionState.connectionRoute === 'proxy' ? 'ATIVO' : 'CONFIGURADO'}</span>}
           </div>
           {!proxy ? <div className="inlineLoading" role="status"><span className="spinner" aria-hidden="true" />Carregando proxy…</div> : <>
             {proxy.configured && <div className="manageProxyCurrent">
-              <span>Proxy atual</span>
+              <span>Proxy configurado</span>
               <code>{proxy.url}</code>
               <small>A senha é protegida e aparece mascarada.</small>
             </div>}
+            {connectionState?.proxyFallback && <p role="status">O proxy falhou. A instância está usando a saída direta da VPS para conectar. O proxy permanece salvo; para voltar a usá-lo, salve seu endereço novamente.</p>}
             <label className="manageLabel" htmlFor="manage-proxy-url">{proxy.configured ? 'Novo endereço do proxy' : 'Endereço do proxy'}</label>
             <input className="manageURL" id="manage-proxy-url" type="text" value={proxyURL}
               onChange={(event) => setProxyURL(event.target.value)}
@@ -373,7 +385,7 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
                     <div className="proxyGuideCode"><code>{tunnelProxyURL}</code><button type="button" className="manageSubtleButton"
                       onClick={() => setProxyURL(tunnelProxyURL)}>Preencher acima</button></div></li>
                 </ol>
-                <small>Se o PowerShell for fechado, o computador desligar ou suspender, o túnel será interrompido.</small>
+                <small>Se o PowerShell for fechado, o computador desligar ou suspender, o túnel será interrompido. Se a reconexão pelo proxy falhar, a instância tentará conectar diretamente pela VPS.</small>
               </div>
             </details>
             <div className="manageSave">
