@@ -5,7 +5,7 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
-## [0.15.1] - 2026-09-20
+## [0.15.2] - 2026-09-20
 
 - Recreate the WhatsApp client after external logout instead of reusing a deleted
   device, allowing a new QR code without deleting the Wirely instance.
