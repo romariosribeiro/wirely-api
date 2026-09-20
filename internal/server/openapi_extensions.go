@@ -23,7 +23,7 @@ func buildExtendedOpenAPI() []byte {
 	if json.Unmarshal([]byte(openAPISpec), &spec) != nil {
 		return []byte(openAPISpec)
 	}
-	spec["info"].(map[string]any)["version"] = "0.15.0"
+	spec["info"].(map[string]any)["version"] = "0.15.1"
 	paths := spec["paths"].(map[string]any)
 	spec["tags"] = append(spec["tags"].([]any), map[string]any{"name": "Status"})
 	schemas := spec["components"].(map[string]any)["schemas"].(map[string]any)

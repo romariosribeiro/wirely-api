@@ -5,6 +5,16 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-09-20
+
+- Recreate the WhatsApp client after external logout instead of reusing a deleted
+  device, allowing a new QR code without deleting the Wirely instance.
+- Preserve the instance token, configuration and chat history during re-pairing.
+- Serialize session recreation and ignore late state updates from retired clients.
+- Keep deleted-device errors separate from proxy failures.
+- Cover deleted devices, delayed cleanup, concurrent reconnects and QR generation
+  with regression tests.
+
 ## [0.15.0] - 2026-09-20
 
 - Automatically retry through the VPS direct connection when an instance proxy

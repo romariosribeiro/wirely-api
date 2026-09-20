@@ -55,6 +55,7 @@ type Manager struct {
 
 	mu       sync.RWMutex
 	sessions map[string]*session
+	ensureMu sync.Mutex
 
 	eventMu      sync.RWMutex
 	eventHandler EventHandler
@@ -77,6 +78,8 @@ type session struct {
 	proxyConfigured  bool
 	proxyFallback    bool
 	reconnectAllowed bool
+	needsFreshDevice bool
+	retired          bool
 }
 
 func NewManager(dataDirectory string, store *storage.Store) (*Manager, error) {
@@ -148,7 +151,7 @@ func (m *Manager) Connect(id string) error {
 
 func (m *Manager) connect(current *session) {
 	if current.client.Store.ID == nil {
-		qrChannel, err := current.client.GetQRChannel(context.Background())
+		qrChannel, err := current.client.GetQRChannel(current.client.BackgroundEventCtx)
 		if err != nil {
 			m.connectionError(current, err)
 			return
@@ -474,8 +477,19 @@ func (m *Manager) Close() error {
 }
 
 func (m *Manager) ensure(ctx context.Context, id string) (*session, error) {
+	// Serialize replacement so simultaneous connect/pair requests share one client.
+	m.ensureMu.Lock()
+	defer m.ensureMu.Unlock()
 	if current, err := m.get(id); err == nil {
-		return current, nil
+		current.mu.RLock()
+		needsFreshDevice := current.needsFreshDevice
+		current.mu.RUnlock()
+		if !needsFreshDevice {
+			return current, nil
+		}
+		if err := m.discardLoggedOutSession(ctx, current); err != nil {
+			return nil, err
+		}
 	}
 	instance, err := m.store.GetInstance(ctx, id)
 	if err != nil {
@@ -555,6 +569,12 @@ func (m *Manager) get(id string) (*session, error) {
 }
 
 func (m *Manager) handleEvent(current *session, event any) {
+	current.mu.RLock()
+	retired := current.retired
+	current.mu.RUnlock()
+	if retired {
+		return
+	}
 	switch value := event.(type) {
 	case *events.Connected:
 		current.mu.Lock()
@@ -591,6 +611,7 @@ func (m *Manager) handleEvent(current *session, event any) {
 		}
 	case *events.LoggedOut:
 		current.mu.Lock()
+		current.needsFreshDevice = true
 		current.reconnectAllowed = false
 		current.connecting = false
 		current.qrCode = ""
@@ -718,6 +739,10 @@ func (m *Manager) connectionError(current *session, err error) {
 		message = err.Error()
 	}
 	current.mu.Lock()
+	if errors.Is(err, whatsmeowStore.ErrDeviceDeleted) {
+		current.needsFreshDevice = true
+		current.reconnectAllowed = false
+	}
 	current.connecting = false
 	current.qrCode = ""
 	current.qrExpires = time.Time{}
@@ -727,6 +752,10 @@ func (m *Manager) connectionError(current *session, err error) {
 
 func (m *Manager) setState(current *session, status, lastError string) {
 	current.mu.Lock()
+	if current.retired {
+		current.mu.Unlock()
+		return
+	}
 	changed := current.status != status || current.lastError != lastError
 	current.status = status
 	current.lastError = lastError

@@ -7,13 +7,14 @@ import (
 	"log/slog"
 
 	"go.mau.fi/whatsmeow"
+	whatsmeowStore "go.mau.fi/whatsmeow/store"
 )
 
 // Only transport connection failures trigger fallback. Logout and rejected
 // WhatsApp authentication events must never be bypassed by changing routes.
 func (m *Manager) connectWithProxyFallback(current *session, connect func() error) error {
 	err := connect()
-	if err != nil && !errors.Is(err, whatsmeow.ErrAlreadyConnected) && !errors.Is(err, context.Canceled) && m.activateProxyFallback(current) {
+	if err != nil && !errors.Is(err, whatsmeow.ErrAlreadyConnected) && !errors.Is(err, whatsmeowStore.ErrDeviceDeleted) && !errors.Is(err, context.Canceled) && m.activateProxyFallback(current) {
 		return connect()
 	}
 	return err
