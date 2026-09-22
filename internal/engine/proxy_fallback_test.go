@@ -167,12 +167,15 @@ func TestRejectedHTTPProxyTriggersFallback(t *testing.T) {
 	}
 }
 
-func TestCanceledOrAlreadyConnectedDoesNotChangeProxy(t *testing.T) {
+func TestCanceledOrAlreadyConnectedStopsReconnectWithoutChangingProxy(t *testing.T) {
 	for _, failure := range []error{context.Canceled, whatsmeow.ErrAlreadyConnected} {
 		m, current := fallbackSession(t, "socks5://127.0.0.1:1080")
+		if current.client.AutoReconnectHook(failure) || current.proxyFallback {
+			t.Fatal("terminal reconnect error must stop without changing proxy")
+		}
 		attempts := 0
 		err := m.connectWithProxyFallback(current, func() error { attempts++; return failure })
-		if attempts != 1 || current.proxyFallback || !errors.Is(err, failure) {
+		if attempts != 1 || !errors.Is(err, failure) {
 			t.Fatal("non-transport error must not change proxy")
 		}
 	}

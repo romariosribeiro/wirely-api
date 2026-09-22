@@ -137,6 +137,25 @@ func TestDeletedDeviceErrorMarksSessionForResetWithoutProxyFallback(t *testing.T
 	}
 }
 
+func TestDeletedDeviceStopsBackgroundReconnectAndPreparesReset(t *testing.T) {
+	m, old := fallbackSession(t, "socks5://127.0.0.1:1080")
+	if old.client.AutoReconnectHook(whatsmeowStore.ErrDeviceDeleted) {
+		t.Fatal("deleted device must stop the background reconnect loop")
+	}
+	old.mu.RLock()
+	needsFreshDevice := old.needsFreshDevice
+	proxyFallback := old.proxyFallback
+	reconnectAllowed := old.reconnectAllowed
+	old.mu.RUnlock()
+	if !needsFreshDevice || proxyFallback || reconnectAllowed {
+		t.Fatal("deleted device must be recreated without bypassing the proxy")
+	}
+	fresh, err := m.ensure(context.Background(), old.id)
+	if err != nil || fresh == old {
+		t.Fatal("next request must create a fresh WhatsApp device")
+	}
+}
+
 func TestDisconnectWithoutLogoutKeepsExistingDevice(t *testing.T) {
 	m, old := fallbackSession(t, "")
 	if err := m.Disconnect(old.id); err != nil {

@@ -387,8 +387,8 @@ func (m *Manager) State(id string) (State, error) {
 		}
 		return State{Status: instance.Status}, nil
 	}
+	live := current.client.IsConnected() && current.client.IsLoggedIn()
 	current.mu.RLock()
-	defer current.mu.RUnlock()
 	state := State{
 		Status:          current.status,
 		QRAvailable:     current.qrCode != "" && time.Now().UTC().Before(current.qrExpires),
@@ -399,11 +399,17 @@ func (m *Manager) State(id string) (State, error) {
 	if current.proxyConfigured && !current.proxyFallback {
 		state.ConnectionRoute = "proxy"
 	}
-	if state.Status == "connected" && (!current.client.IsConnected() || !current.client.IsLoggedIn()) {
-		state.Status = "connecting"
-	}
 	if state.QRAvailable {
 		state.QRExpiresAt = current.qrExpires.Format(time.RFC3339)
+	}
+	current.mu.RUnlock()
+
+	if live && state.Status != "connected" {
+		state.Status = "connected"
+		state.LastError = ""
+		m.setState(current, "connected", "")
+	} else if state.Status == "connected" && !live {
+		state.Status = "connecting"
 	}
 	return state, nil
 }

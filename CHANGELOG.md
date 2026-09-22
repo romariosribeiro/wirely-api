@@ -5,6 +5,14 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.15.3] - 2026-09-22
+
+- Reconcile the persisted instance status with the live WhatsApp socket before
+  returning the dashboard instance list.
+- Stop background reconnects for deleted devices and recreate the WhatsApp
+  session on the next connect without incorrectly bypassing the configured proxy.
+- Stop reconnect attempts cleanly for canceled and already-connected clients.
+
 ## [0.15.2] - 2026-09-20
 
 - Recreate the WhatsApp client after external logout instead of reusing a deleted
@@ -134,6 +142,10 @@ All notable changes to Wirely API are documented here. The project follows
 - Each instance continues to own a single webhook configuration.
 
 [Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.9.0...HEAD
+[0.15.3]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.15.3
+[0.15.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.15.2
+[0.15.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.15.1
+[0.15.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.15.0
 [0.14.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.14.2
 [0.14.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.14.1
 [0.14.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.14.0

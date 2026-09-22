@@ -27,6 +27,16 @@ func (m *Manager) handleReconnectFailure(current *session, err error) bool {
 	if !allowed {
 		return false
 	}
+	// A deleted device can never be recovered by changing network routes. Stop
+	// whatsmeow's retry loop and let the next connect/pair request recreate only
+	// the revoked WhatsApp device while preserving the Wirely instance.
+	if errors.Is(err, whatsmeowStore.ErrDeviceDeleted) {
+		m.connectionError(current, err)
+		return false
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, whatsmeow.ErrAlreadyConnected) {
+		return false
+	}
 	// Do not log the raw error: proxy errors may contain credentials or URLs.
 	slog.Warn("WhatsApp reconnect attempt failed", "instance_id", current.id, "error_type", fmt.Sprintf("%T", err))
 	m.activateProxyFallback(current)

@@ -576,6 +576,15 @@ func (s *Server) listInstances(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to list instances")
 		return
 	}
+	// The database status is durable but can lag behind the live socket after a
+	// fast reconnect or a late event. Reconcile it before rendering the panel.
+	if s.engine != nil {
+		for index := range instances {
+			if state, stateErr := s.engine.State(instances[index].ID); stateErr == nil {
+				instances[index].Status = state.Status
+			}
+		}
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"data": instances})
 }
 
