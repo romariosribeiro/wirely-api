@@ -1,10 +1,13 @@
 package backup
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"database/sql"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -66,6 +69,74 @@ func TestCreateAndApplyRestore(t *testing.T) {
 	}
 	if restoredAgain, err := ApplyPending(dataDirectory); err != nil || restoredAgain {
 		t.Fatalf("restore marker was not cleared: restored=%v err=%v", restoredAgain, err)
+	}
+}
+
+func TestBackupExcludesRuntimeCachesAndCleansStaleSnapshots(t *testing.T) {
+	dataDirectory := filepath.Join(t.TempDir(), "data")
+	write := func(relative, value string) {
+		path := filepath.Join(dataDirectory, relative)
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(value), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.MkdirAll(dataDirectory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	database, err := sql.Open("sqlite", filepath.Join(dataDirectory, "wirely.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := database.Exec("CREATE TABLE state (value TEXT)"); err != nil {
+		t.Fatal(err)
+	}
+	if err := database.Close(); err != nil {
+		t.Fatal(err)
+	}
+	write("token.key", "key")
+	write("whatsapp/session.dat", "session")
+	write("whatsapp/received-media/cache/file.bin", "large cache")
+	write("updates/wirely.ready", "staged binary")
+	write("backups/.snapshot-interrupted/partial", "partial")
+
+	manager, err := New(dataDirectory, 2, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dataDirectory, "backups", ".snapshot-interrupted")); !os.IsNotExist(err) {
+		t.Fatalf("stale snapshot was not removed: %v", err)
+	}
+	created, err := manager.Create(context.Background(), "manual")
+	if err != nil {
+		t.Fatal(err)
+	}
+	reader, err := zip.OpenReader(filepath.Join(dataDirectory, "backups", created.ID+".zip"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reader.Close()
+	seen := map[string]bool{}
+	for _, file := range reader.File {
+		seen[file.Name] = true
+	}
+	if !seen["wirely.db"] || !seen["token.key"] || !seen["whatsapp/session.dat"] {
+		t.Fatalf("essential files are missing from backup: %#v", seen)
+	}
+	for name := range seen {
+		if strings.HasPrefix(name, "whatsapp/received-media/") || strings.HasPrefix(name, "updates/") || strings.HasPrefix(name, "backups/") {
+			t.Fatalf("runtime file %q must not be backed up", name)
+		}
+	}
+}
+
+func TestCopyWithContextStopsWhenCanceled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := copyWithContext(ctx, &bytes.Buffer{}, strings.NewReader("content")); err != context.Canceled {
+		t.Fatalf("expected context cancellation, got %v", err)
 	}
 }
 

@@ -66,8 +66,11 @@ func (s *Server) applyUpdate(w http.ResponseWriter, r *http.Request) {
 		"status": "restart_scheduled", "update": status, "backup": backupInfo,
 		"message": "Update verified and installed. Wirely will restart automatically.",
 	})
+	if flusher, ok := w.(http.Flusher); ok {
+		flusher.Flush()
+	}
 	go func() {
-		time.Sleep(750 * time.Millisecond)
+		time.Sleep(3 * time.Second)
 		_ = s.updates.Activate()
 	}()
 }

@@ -5,6 +5,13 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-10-01
+
+- Exclude received-media caches and staged update binaries from safety backups, keeping update backups small and fast.
+- Remove interrupted backup staging directories safely at startup and honor cancellation while copying large files.
+- Let the update modal survive the expected connection interruption, poll the health endpoint, and reload after the target version starts.
+- Flush the accepted update response and allow administrative middleware to finish before systemd activation.
+
 ## [0.16.0] - 2026-10-01
 
 - Add encrypted Telegram and SMTP alert integrations to the management panel.
@@ -150,6 +157,7 @@ All notable changes to Wirely API are documented here. The project follows
 - Each instance continues to own a single webhook configuration.
 
 [Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.9.0...HEAD
+[0.16.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.16.1
 [0.16.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.16.0
 [0.15.3]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.15.3
 [0.15.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.15.2

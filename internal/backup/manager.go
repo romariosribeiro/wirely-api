@@ -77,6 +77,9 @@ func New(dataDirectory string, retention int, interval time.Duration) (*Manager,
 	if err := os.MkdirAll(backupDir, 0o700); err != nil {
 		return nil, fmt.Errorf("create backup directory: %w", err)
 	}
+	if err := removeStaleSnapshots(backupDir); err != nil {
+		return nil, fmt.Errorf("remove stale backup snapshots: %w", err)
+	}
 	return &Manager{dataDirectory: dataDirectory, backupDir: backupDir, retention: retention, interval: interval}, nil
 }
 
@@ -292,7 +295,7 @@ func snapshotTree(ctx context.Context, source, destination string) error {
 		if err != nil || relative == "." {
 			return err
 		}
-		if relative == "backups" || strings.HasPrefix(relative, "backups"+string(filepath.Separator)) {
+		if excludedFromBackup(relative) {
 			if entry.IsDir() {
 				return filepath.SkipDir
 			}
@@ -311,8 +314,33 @@ func snapshotTree(ctx context.Context, source, destination string) error {
 		if strings.HasSuffix(strings.ToLower(entry.Name()), ".db") {
 			return snapshotSQLite(path, target)
 		}
-		return copyFile(path, target, 0o600)
+		return copyFile(ctx, path, target, 0o600)
 	})
+}
+
+func excludedFromBackup(relative string) bool {
+	separator := string(filepath.Separator)
+	for _, excluded := range []string{"backups", "updates", filepath.Join("whatsapp", "received-media")} {
+		if relative == excluded || strings.HasPrefix(relative, excluded+separator) {
+			return true
+		}
+	}
+	return false
+}
+
+func removeStaleSnapshots(backupDir string) error {
+	entries, err := os.ReadDir(backupDir)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if entry.IsDir() && strings.HasPrefix(entry.Name(), ".snapshot-") {
+			if err := os.RemoveAll(filepath.Join(backupDir, entry.Name())); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func snapshotSQLite(source, destination string) error {
@@ -332,7 +360,7 @@ func snapshotSQLite(source, destination string) error {
 	return os.Chmod(destination, 0o600)
 }
 
-func copyFile(source, destination string, mode fs.FileMode) error {
+func copyFile(ctx context.Context, source, destination string, mode fs.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(destination), 0o700); err != nil {
 		return err
 	}
@@ -345,11 +373,38 @@ func copyFile(source, destination string, mode fs.FileMode) error {
 	if err != nil {
 		return err
 	}
-	if _, err = io.Copy(output, input); err != nil {
+	if _, err = copyWithContext(ctx, output, input); err != nil {
 		_ = output.Close()
 		return err
 	}
 	return output.Close()
+}
+
+func copyWithContext(ctx context.Context, destination io.Writer, source io.Reader) (int64, error) {
+	buffer := make([]byte, 256<<10)
+	var written int64
+	for {
+		if err := ctx.Err(); err != nil {
+			return written, err
+		}
+		read, readErr := source.Read(buffer)
+		if read > 0 {
+			count, writeErr := destination.Write(buffer[:read])
+			written += int64(count)
+			if writeErr != nil {
+				return written, writeErr
+			}
+			if count != read {
+				return written, io.ErrShortWrite
+			}
+		}
+		if errors.Is(readErr, io.EOF) {
+			return written, nil
+		}
+		if readErr != nil {
+			return written, readErr
+		}
+	}
 }
 
 func writeArchive(ctx context.Context, path, source string, metadata manifest) error {
@@ -395,7 +450,7 @@ func writeArchive(ctx context.Context, path, source string, metadata manifest) e
 			if openErr != nil {
 				return openErr
 			}
-			_, copyErr := io.Copy(writer, input)
+			_, copyErr := copyWithContext(ctx, writer, input)
 			closeErr := input.Close()
 			if copyErr != nil {
 				return copyErr

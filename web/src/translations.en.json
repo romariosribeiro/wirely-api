@@ -758,5 +758,8 @@
   "Falha ao enviar o teste.": "Could not send the test.",
   "Integrações de alertas atualizadas": "Alert integrations updated",
   "Teste do Telegram enviado": "Telegram test sent",
-  "Teste SMTP enviado": "SMTP test sent"
+  "Teste SMTP enviado": "SMTP test sent",
+  "Backup concluído e atualização validada. Aguardando o Wirely reiniciar…": "Backup completed and update verified. Waiting for Wirely to restart…",
+  "A conexão foi interrompida durante o reinício. Confirmando a nova versão…": "The connection was interrupted during restart. Confirming the new version…",
+  "A atualização demorou mais que o esperado. Recarregue a página para verificar a versão instalada.": "The update took longer than expected. Reload the page to check the installed version."
 }

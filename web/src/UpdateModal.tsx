@@ -47,12 +47,30 @@ export function UpdateModal({ initial, onClose, onChanged }: Props) {
     setApplying(true); setError(''); setNotice('')
     try {
       await request('/api/system/update', { method: 'POST' })
-      setNotice('Backup concluído e atualização validada. O Wirely está reiniciando…')
-      window.setTimeout(() => window.location.reload(), 7000)
+      setNotice('Backup concluído e atualização validada. Aguardando o Wirely reiniciar…')
+      await waitForVersion(status.latestVersion)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Não foi possível aplicar a atualização.')
-      setApplying(false)
+      if (reason instanceof TypeError || reason instanceof SyntaxError) {
+        setNotice('A conexão foi interrompida durante o reinício. Confirmando a nova versão…')
+        try { await waitForVersion(status.latestVersion); return } catch { /* Show the original transport failure below. */ }
+      }
+      setError(reason instanceof Error ? reason.message : 'Não foi possível aplicar a atualização.'); setApplying(false)
     }
+  }
+
+  async function waitForVersion(expected?: string) {
+    const target = expected?.replace(/^v/, '')
+    for (let attempt = 0; attempt < 45; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 2000))
+      try {
+        const response = await fetch('/api/health', { cache: 'no-store' })
+        const health = await response.json() as { version?: string }
+        if (response.ok && (!target || health.version?.replace(/^v/, '') === target)) {
+          window.location.reload(); return
+        }
+      } catch { /* The service is expected to be briefly unavailable. */ }
+    }
+    throw new Error('A atualização demorou mais que o esperado. Recarregue a página para verificar a versão instalada.')
   }
 
   return <dialog ref={dialog} className="updateModal" aria-labelledby="update-title"
