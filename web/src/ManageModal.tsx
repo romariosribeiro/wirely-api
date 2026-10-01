@@ -42,6 +42,9 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
   const [proxy, setProxy] = useState<ProxyConfig | null>(null)
   const [connectionState, setConnectionState] = useState<ConnectionState | null>(null)
   const [proxyURL, setProxyURL] = useState('')
+  const [proxyAutoReconnect, setProxyAutoReconnect] = useState(false)
+  const [proxyRetryInterval, setProxyRetryInterval] = useState(60)
+  const [proxyReconnectAttempts, setProxyReconnectAttempts] = useState(0)
   const [sshHost, setSSHHost] = useState(() => window.location.hostname || 'IP_OU_DOMINIO_DA_VPS')
   const [sshUser, setSSHUser] = useState('ubuntu')
   const [sshKeyPath, setSSHKeyPath] = useState('')
@@ -59,7 +62,8 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
   const dirty = config !== null && (url !== config.url || enabled !== config.enabled ||
     JSON.stringify([...events].sort()) !== JSON.stringify([...config.events].sort()))
   const settingsDirty = settings !== null && JSON.stringify(settingsDraft) !== JSON.stringify(settings)
-  const proxyDirty = proxyURL.trim() !== ''
+  const proxyDirty = proxy !== null && (proxyURL.trim() !== '' || proxyAutoReconnect !== proxy.autoReconnect ||
+    proxyRetryInterval !== proxy.retryIntervalSeconds || proxyReconnectAttempts !== proxy.reconnectAttempts)
   const safeSSHKeyPath = sshKeyPath.trim().replaceAll('"', '`"')
   const tunnelTarget = `${sshUser.trim() || 'ubuntu'}@${sshHost.trim() || 'IP_OU_DOMINIO_DA_VPS'}`
   const tunnelCommand = `ssh${safeSSHKeyPath ? ` -i "${safeSSHKeyPath}"` : ''} -N -T -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -R 127.0.0.1:${tunnelPort || '1080'} ${tunnelTarget}`
@@ -115,7 +119,12 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
   useEffect(() => {
     let active = true
     request<ProxyConfig>(`${endpoint}/proxy`).then((value) => {
-      if (active) setProxy(value)
+      if (active) {
+        setProxy(value)
+        setProxyAutoReconnect(value.autoReconnect)
+        setProxyRetryInterval(value.retryIntervalSeconds || 60)
+        setProxyReconnectAttempts(value.reconnectAttempts || 0)
+      }
     }).catch((reason) => {
       if (active) setError(reason instanceof Error ? reason.message : 'Falha ao carregar proxy.')
     })
@@ -222,15 +231,21 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
 
   async function saveProxy(event: FormEvent) {
     event.preventDefault()
-    if (proxy?.configured && !window.confirm('Trocar o proxy reconectará a instância. Continuar?')) return
+    if (proxy?.configured && proxyURL.trim() && !window.confirm('Trocar o proxy reconectará a instância. Continuar?')) return
     setBusy('proxy'); setError(''); setNotice('')
     try {
       const result = await request<ProxyConfig>(`${endpoint}/proxy`, {
-        method: 'PUT', body: JSON.stringify({ url: proxyURL.trim() }),
+        method: 'PUT', body: JSON.stringify({
+          url: proxyURL.trim(), autoReconnect: proxyAutoReconnect,
+          retryIntervalSeconds: proxyRetryInterval, reconnectAttempts: proxyReconnectAttempts,
+        }),
       })
       setProxy(result)
+      setProxyAutoReconnect(result.autoReconnect)
+      setProxyRetryInterval(result.retryIntervalSeconds)
+      setProxyReconnectAttempts(result.reconnectAttempts)
       setProxyURL('')
-      setNotice('Proxy salvo e aplicado à instância.')
+      setNotice(proxyURL.trim() ? 'Proxy salvo e aplicado à instância.' : 'Configurações de reconexão salvas.')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Falha ao salvar proxy.')
     } finally { setBusy('') }
@@ -241,7 +256,10 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
     setBusy('proxy'); setError(''); setNotice('')
     try {
       await request<void>(`${endpoint}/proxy`, { method: 'DELETE' })
-      setProxy({ configured: false, hasPassword: false })
+      setProxy({ configured: false, hasPassword: false, autoReconnect: false, retryIntervalSeconds: 60, reconnectAttempts: 0 })
+      setProxyAutoReconnect(false)
+      setProxyRetryInterval(60)
+      setProxyReconnectAttempts(0)
       setProxyURL('')
       setNotice('Proxy removido. A conexão direta foi restaurada.')
     } catch (reason) {
@@ -374,13 +392,28 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
               <code>{proxy.url}</code>
               <small>A senha é protegida e aparece mascarada.</small>
             </div>}
-            {connectionState?.proxyFallback && <p role="status">O proxy falhou. A instância está usando a saída direta da VPS para conectar. O proxy permanece salvo; para voltar a usá-lo, salve seu endereço novamente.</p>}
+            {connectionState?.proxyFallback && <p role="status">O proxy falhou e a instância está usando a saída direta da VPS. {proxyAutoReconnect ? `Uma nova verificação será feita a cada ${proxyRetryInterval} segundos.` : 'Ative a reconexão automática ou salve o endereço novamente para voltar ao proxy.'}</p>}
             <label className="manageLabel" htmlFor="manage-proxy-url">{proxy.configured ? 'Novo endereço do proxy' : 'Endereço do proxy'}</label>
             <input className="manageURL" id="manage-proxy-url" type="text" value={proxyURL}
               onChange={(event) => setProxyURL(event.target.value)}
               placeholder="socks5://usuario:senha@proxy.exemplo.com:1080"
-              maxLength={2048} disabled={!!busy} autoComplete="off" spellCheck={false} />
+              maxLength={2048} required={!proxy.configured} disabled={!!busy} autoComplete="off" spellCheck={false} />
             <p className="manageHint">Compatível com HTTP, HTTPS e SOCKS5. Usuário e senha são opcionais. Alterar ou remover reconecta a instância.</p>
+            <div className="proxyReconnectCard">
+              <div className="proxyReconnectHeading">
+                <span><strong>Reconexão automática</strong><small>Quando o proxy voltar, troca a saída da VPS pela rota configurada.</small></span>
+                <label className="manageSwitch"><input type="checkbox" role="switch" checked={proxyAutoReconnect} disabled={!!busy}
+                  onChange={(event) => setProxyAutoReconnect(event.target.checked)} /><span>{proxyAutoReconnect ? 'Ligado' : 'Desligado'}</span></label>
+              </div>
+              <div className="proxyReconnectFields">
+                <label>Intervalo entre verificações <span>segundos</span><input type="number" min="60" max="86400" required
+                  value={proxyRetryInterval} disabled={!!busy || !proxyAutoReconnect}
+                  onChange={(event) => setProxyRetryInterval(Math.max(60, Number(event.target.value) || 60))} /></label>
+                <label>Tentativas <span>0 = ilimitadas</span><input type="number" min="0" max="10000" required
+                  value={proxyReconnectAttempts} disabled={!!busy || !proxyAutoReconnect}
+                  onChange={(event) => setProxyReconnectAttempts(Math.max(0, Number(event.target.value) || 0))} /></label>
+              </div>
+            </div>
             <details className="proxyGuide">
               <summary>Como criar um proxy pelo Windows</summary>
               <div className="proxyGuideBody">
@@ -412,7 +445,7 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
               {proxy.configured && <button type="button" className="manageSubtleButton manageProxyRemove" disabled={!!busy}
                 onClick={() => void removeProxy()}>Remover proxy</button>}
               <button className="primaryButton" type="submit" disabled={!!busy || !proxyDirty} aria-busy={busy === 'proxy'}>
-                {busy === 'proxy' ? 'Aplicando…' : proxy.configured ? 'Trocar proxy' : 'Salvar proxy'}
+                {busy === 'proxy' ? 'Aplicando…' : proxy.configured && proxyURL.trim() ? 'Trocar proxy' : proxy.configured ? 'Salvar configurações' : 'Salvar proxy'}
               </button>
             </div>
           </>}

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/romariosribeiro/wirely-api/internal/storage"
 	"go.mau.fi/whatsmeow"
@@ -126,6 +127,57 @@ func TestProxyFallbackContinuesRetriesButHonorsManualDisconnect(t *testing.T) {
 	state, _ := m.State(current.id)
 	if state.Status != "disconnected" {
 		t.Fatal("manual disconnect must remain disconnected")
+	}
+}
+
+func TestProxyAutoRecoveryHonorsAttemptLimit(t *testing.T) {
+	m, current := fallbackSession(t, "socks5://127.0.0.1:1080")
+	current.mu.Lock()
+	current.proxySettings.AutoReconnect = true
+	current.proxySettings.RetryIntervalSeconds = 60
+	current.proxySettings.ReconnectAttempts = 2
+	current.mu.Unlock()
+	m.proxyDelay = func(int) time.Duration { return time.Millisecond }
+	var attempts atomic.Int32
+	done := make(chan struct{})
+	m.proxyProbe = func(context.Context, string) error {
+		if attempts.Add(1) == 2 {
+			close(done)
+		}
+		return errors.New("proxy is still unavailable")
+	}
+	if !m.activateProxyFallback(current) {
+		t.Fatal("proxy fallback was not activated")
+	}
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("automatic proxy recovery did not run")
+	}
+	time.Sleep(5 * time.Millisecond)
+	if attempts.Load() != 2 {
+		t.Fatalf("recovery ignored attempt limit: %d", attempts.Load())
+	}
+}
+
+func TestProxyAutoRecoveryReturnsAfterSuccessfulProbe(t *testing.T) {
+	m, current := fallbackSession(t, "socks5://127.0.0.1:1080")
+	current.mu.Lock()
+	current.proxySettings.AutoReconnect = true
+	current.proxySettings.RetryIntervalSeconds = 60
+	current.proxySettings.ReconnectAttempts = 3
+	current.mu.Unlock()
+	m.proxyDelay = func(int) time.Duration { return time.Millisecond }
+	m.proxyProbe = func(context.Context, string) error { return nil }
+	returned := make(chan struct{})
+	m.proxyReturn = func(*session) { close(returned) }
+	if !m.activateProxyFallback(current) {
+		t.Fatal("proxy fallback was not activated")
+	}
+	select {
+	case <-returned:
+	case <-time.After(time.Second):
+		t.Fatal("available proxy was not selected again")
 	}
 }
 

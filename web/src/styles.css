@@ -253,6 +253,14 @@ dialog[open] { animation: modalIn .2s ease-out; }
 .manageProxyCurrent > span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
 .manageProxyCurrent code { display: block; overflow: hidden; color: #cbd5e7; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .manageProxyCurrent small { margin-top: 5px; }
+.proxyReconnectCard { margin-top: 14px; padding: 13px; border: 1px solid #2d3543; border-radius: 9px; background: #0d1016; }
+.proxyReconnectHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.proxyReconnectHeading strong { display: block; color: #cbd3e1; font-size: 11px; font-weight: 550; }
+.proxyReconnectHeading small { max-width: 390px; margin-top: 3px; }
+.proxyReconnectFields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 13px; padding-top: 13px; border-top: 1px solid #252c37; }
+.proxyReconnectFields label { color: #aeb8ca; font-size: 10px; }
+.proxyReconnectFields label > span { color: var(--muted); font-size: 9px; }
+.proxyReconnectFields input { width: 100%; min-height: 34px; margin-top: 6px; padding: 7px 9px; font-size: 10px; }
 .manageProxyRemove { color: #efa3ac; border-color: #efa3ac38; background: #efa3ac0a; }
 .manageProxyRemove:hover:not(:disabled) { color: #ffc0c6; border-color: #efa3ac70; background: #efa3ac16; }
 .proxyGuide { min-width: 0; max-width: 100%; margin-top: 14px; overflow: hidden; border: 1px solid #2d3543; border-radius: 9px; background: #0d1016; }
@@ -348,6 +356,9 @@ dialog[open] { animation: modalIn .2s ease-out; }
   .manageSave { flex-wrap: wrap; }
   .manageSave > span { flex-basis: 100%; }
   .proxyGuideFields { grid-template-columns: 1fr; }
+  .proxyReconnectHeading { align-items: stretch; flex-direction: column; }
+  .proxyReconnectHeading .manageSwitch { align-self: flex-end; }
+  .proxyReconnectFields { grid-template-columns: 1fr; }
   .proxyGuideFields .proxyGuideKey { grid-column: auto; }
   .proxyGuideCode { align-items: stretch; flex-direction: column; }
   .proxyGuideCode button { align-self: flex-end; }

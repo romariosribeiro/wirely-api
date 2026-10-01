@@ -61,6 +61,9 @@ type Manager struct {
 	eventHandler EventHandler
 	presenceMu   sync.RWMutex
 	presences    map[string]PresenceState
+	proxyProbe   func(context.Context, string) error
+	proxyDelay   func(int) time.Duration
+	proxyReturn  func(*session)
 }
 type session struct {
 	id        string
@@ -77,6 +80,8 @@ type session struct {
 	settings         storage.InstanceSettings
 	proxyConfigured  bool
 	proxyFallback    bool
+	proxySettings    storage.ProxySettings
+	proxyRecoveryGen uint64
 	reconnectAllowed bool
 	needsFreshDevice bool
 	retired          bool
@@ -88,13 +93,17 @@ func NewManager(dataDirectory string, store *storage.Store) (*Manager, error) {
 	if err := os.MkdirAll(sessionsDirectory, 0o700); err != nil {
 		return nil, fmt.Errorf("create WhatsApp session directory: %w", err)
 	}
-	return &Manager{
+	manager := &Manager{
 		dataDirectory:  sessionsDirectory,
 		store:          store,
 		sessions:       make(map[string]*session),
 		mediaDownloads: make(chan struct{}, 2),
 		presences:      make(map[string]PresenceState),
-	}, nil
+		proxyProbe:     probeProxy,
+		proxyDelay:     func(seconds int) time.Duration { return time.Duration(seconds) * time.Second },
+	}
+	manager.proxyReturn = manager.returnToProxy
+	return manager, nil
 }
 
 func configureDeviceIdentity() {
@@ -293,17 +302,47 @@ func (m *Manager) SetProxy(id, address string) error {
 	if err != nil {
 		return nil
 	}
+	current.mu.RLock()
+	settings := current.proxySettings
+	current.mu.RUnlock()
+	settings.URL = address
+	return m.applyProxySettings(current, settings, true)
+}
+
+func (m *Manager) SetProxySettings(id string, settings storage.ProxySettings, forceReconnect bool) error {
+	current, err := m.get(id)
+	if err != nil {
+		return nil // The settings will be loaded when the session is initialized.
+	}
+	return m.applyProxySettings(current, settings, forceReconnect)
+}
+
+func (m *Manager) applyProxySettings(current *session, settings storage.ProxySettings, forceReconnect bool) error {
+	current.mu.RLock()
+	addressChanged := current.proxySettings.URL != settings.URL
+	current.mu.RUnlock()
+	changeRoute := forceReconnect || addressChanged
 	wasConnected := current.client.IsConnected()
-	if err := current.client.SetProxyAddress(address); err != nil {
-		return fmt.Errorf("configure proxy: %w", err)
+	if changeRoute {
+		if err := current.client.SetProxyAddress(settings.URL); err != nil {
+			return fmt.Errorf("configure proxy: %w", err)
+		}
 	}
 	current.mu.Lock()
-	current.proxyConfigured = address != ""
-	current.proxyFallback = false
+	current.proxySettings = settings
+	current.proxyConfigured = settings.URL != ""
+	current.proxyRecoveryGen++
+	if changeRoute {
+		current.proxyFallback = false
+	}
+	fallback := current.proxyFallback
 	current.mu.Unlock()
-	if wasConnected {
+	if changeRoute && wasConnected {
 		current.client.Disconnect()
-		return m.Connect(id)
+		return m.Connect(current.id)
+	}
+	if fallback && settings.AutoReconnect {
+		m.startProxyRecovery(current)
 	}
 	return nil
 }
@@ -526,18 +565,19 @@ func (m *Manager) ensure(ctx context.Context, id string) (*session, error) {
 		id: id, client: whatsmeow.NewClient(device, nil), container: container,
 		cancel: cancel, status: "disconnected", settings: instance.InstanceSettings,
 	}
-	proxyAddress, err := m.store.GetInstanceProxy(ctx, id)
+	proxySettings, err := m.store.GetInstanceProxySettings(ctx, id)
 	if err != nil {
 		cancel()
 		_ = container.Close()
 		return nil, err
 	}
-	if err := current.client.SetProxyAddress(proxyAddress); err != nil {
+	if err := current.client.SetProxyAddress(proxySettings.URL); err != nil {
 		cancel()
 		_ = container.Close()
 		return nil, fmt.Errorf("configure instance proxy: %w", err)
 	}
-	current.proxyConfigured = proxyAddress != ""
+	current.proxySettings = proxySettings
+	current.proxyConfigured = proxySettings.URL != ""
 	current.client.BackgroundEventCtx = sessionContext
 	// Paired sessions retry startup network failures as well as later outages.
 	current.client.InitialAutoReconnect = device.ID != nil

@@ -66,6 +66,9 @@ export type ProxyConfig = {
   port?: string
   username?: string
   hasPassword: boolean
+  autoReconnect: boolean
+  retryIntervalSeconds: number
+  reconnectAttempts: number
 }
 
 export type Contact = {

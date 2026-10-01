@@ -5,6 +5,13 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-10-01
+
+- Add per-instance automatic proxy recovery with a configurable check interval of at least 60 seconds.
+- Allow a finite recovery attempt limit or unlimited attempts with zero.
+- Verify real connectivity through HTTP, HTTPS, or SOCKS5 before moving a live instance back from the VPS fallback route.
+- Add responsive recovery controls to the bilingual management panel and document them in OpenAPI.
+
 ## [0.16.2] - 2026-10-01
 
 - Create restore staging and rollback directories inside the systemd-approved data area.
@@ -163,6 +170,7 @@ All notable changes to Wirely API are documented here. The project follows
 - Each instance continues to own a single webhook configuration.
 
 [Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.9.0...HEAD
+[0.17.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.0
 [0.16.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.16.2
 [0.16.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.16.1
 [0.16.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.16.0

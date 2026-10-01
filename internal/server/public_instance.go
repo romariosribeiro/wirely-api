@@ -337,7 +337,7 @@ func (s *Server) publicSetInstanceProxy(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusBadRequest, "invalid request")
 		return
 	}
-	result, err := s.saveInstanceProxy(r.Context(), instanceID, payload.URL)
+	result, err := s.saveInstanceProxy(r.Context(), instanceID, payload)
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, err.Error())
 		return

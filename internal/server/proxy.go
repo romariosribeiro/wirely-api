@@ -11,17 +11,23 @@ import (
 )
 
 type proxyRequest struct {
-	URL string `json:"url"`
+	URL                  string `json:"url"`
+	AutoReconnect        bool   `json:"autoReconnect"`
+	RetryIntervalSeconds int    `json:"retryIntervalSeconds"`
+	ReconnectAttempts    int    `json:"reconnectAttempts"`
 }
 
 type proxyResponse struct {
-	Configured  bool   `json:"configured"`
-	URL         string `json:"url,omitempty"`
-	Scheme      string `json:"scheme,omitempty"`
-	Host        string `json:"host,omitempty"`
-	Port        string `json:"port,omitempty"`
-	Username    string `json:"username,omitempty"`
-	HasPassword bool   `json:"hasPassword"`
+	Configured           bool   `json:"configured"`
+	URL                  string `json:"url,omitempty"`
+	Scheme               string `json:"scheme,omitempty"`
+	Host                 string `json:"host,omitempty"`
+	Port                 string `json:"port,omitempty"`
+	Username             string `json:"username,omitempty"`
+	HasPassword          bool   `json:"hasPassword"`
+	AutoReconnect        bool   `json:"autoReconnect"`
+	RetryIntervalSeconds int    `json:"retryIntervalSeconds"`
+	ReconnectAttempts    int    `json:"reconnectAttempts"`
 }
 
 func validateProxyURL(value string) (string, error) {
@@ -41,11 +47,15 @@ func validateProxyURL(value string) (string, error) {
 	return parsed.String(), nil
 }
 
-func describeProxy(value string) proxyResponse {
-	if value == "" {
-		return proxyResponse{}
+func describeProxy(settings storage.ProxySettings) proxyResponse {
+	response := proxyResponse{
+		AutoReconnect: settings.AutoReconnect, RetryIntervalSeconds: settings.RetryIntervalSeconds,
+		ReconnectAttempts: settings.ReconnectAttempts,
 	}
-	parsed, _ := url.Parse(value)
+	if settings.URL == "" {
+		return response
+	}
+	parsed, _ := url.Parse(settings.URL)
 	username := ""
 	hasPassword := false
 	if parsed.User != nil {
@@ -55,27 +65,58 @@ func describeProxy(value string) proxyResponse {
 			parsed.User = url.UserPassword(username, "********")
 		}
 	}
-	return proxyResponse{Configured: true, URL: parsed.String(), Scheme: parsed.Scheme, Host: parsed.Hostname(), Port: parsed.Port(), Username: username, HasPassword: hasPassword}
+	response.Configured = true
+	response.URL, response.Scheme, response.Host, response.Port = parsed.String(), parsed.Scheme, parsed.Hostname(), parsed.Port()
+	response.Username, response.HasPassword = username, hasPassword
+	return response
 }
 
-func (s *Server) saveInstanceProxy(ctx context.Context, id, value string) (proxyResponse, error) {
+func validateProxyReconnect(request proxyRequest) error {
+	if request.RetryIntervalSeconds < storage.DefaultProxyRetryInterval || request.RetryIntervalSeconds > 86400 {
+		return errors.New("proxy retry interval must be between 60 and 86400 seconds")
+	}
+	if request.ReconnectAttempts < 0 || request.ReconnectAttempts > 10000 {
+		return errors.New("proxy reconnect attempts must be between 0 and 10000")
+	}
+	return nil
+}
+
+func (s *Server) saveInstanceProxy(ctx context.Context, id string, request proxyRequest) (proxyResponse, error) {
+	current, err := s.store.GetInstanceProxySettings(ctx, id)
+	if err != nil {
+		return proxyResponse{}, err
+	}
+	providedURL := strings.TrimSpace(request.URL)
+	value := providedURL
+	if value == "" {
+		value = current.URL
+	}
 	validated, err := validateProxyURL(value)
 	if err != nil {
 		return proxyResponse{}, err
 	}
-	if err = s.store.SaveInstanceProxy(ctx, id, validated); err != nil {
+	if request.RetryIntervalSeconds == 0 {
+		request.RetryIntervalSeconds = storage.DefaultProxyRetryInterval
+	}
+	if err = validateProxyReconnect(request); err != nil {
+		return proxyResponse{}, err
+	}
+	settings := storage.ProxySettings{URL: validated, AutoReconnect: request.AutoReconnect,
+		RetryIntervalSeconds: request.RetryIntervalSeconds, ReconnectAttempts: request.ReconnectAttempts}
+	if err = s.store.SaveInstanceProxySettings(ctx, id, settings); err != nil {
 		return proxyResponse{}, err
 	}
 	if s.engine != nil {
-		if err = s.engine.SetProxy(id, validated); err != nil {
+		if err = s.engine.SetProxySettings(id, settings, providedURL != ""); err != nil {
 			return proxyResponse{}, err
 		}
 	}
-	return describeProxy(validated), nil
+	return describeProxy(settings), nil
 }
 
 func (s *Server) clearInstanceProxy(ctx context.Context, id string) error {
-	if err := s.store.SaveInstanceProxy(ctx, id, ""); err != nil {
+	settings := storage.ProxySettings{RetryIntervalSeconds: storage.DefaultProxyRetryInterval}
+	if err := s.store.SaveInstanceProxySettings(ctx, id, settings); err != nil {
 		return err
 	}
 	if s.engine != nil {
@@ -85,7 +126,7 @@ func (s *Server) clearInstanceProxy(ctx context.Context, id string) error {
 }
 
 func (s *Server) getInstanceProxy(w http.ResponseWriter, r *http.Request) {
-	value, err := s.store.GetInstanceProxy(r.Context(), r.PathValue("id"))
+	settings, err := s.store.GetInstanceProxySettings(r.Context(), r.PathValue("id"))
 	if errors.Is(err, storage.ErrInstanceNotFound) {
 		writeError(w, http.StatusNotFound, "instance not found")
 		return
@@ -94,7 +135,7 @@ func (s *Server) getInstanceProxy(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to load proxy")
 		return
 	}
-	writeJSON(w, http.StatusOK, describeProxy(value))
+	writeJSON(w, http.StatusOK, describeProxy(settings))
 }
 
 func (s *Server) setInstanceProxy(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +144,7 @@ func (s *Server) setInstanceProxy(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid request")
 		return
 	}
-	result, err := s.saveInstanceProxy(r.Context(), r.PathValue("id"), payload.URL)
+	result, err := s.saveInstanceProxy(r.Context(), r.PathValue("id"), payload)
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, err.Error())
 		return

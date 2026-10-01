@@ -304,6 +304,12 @@ WHERE event LIKE 'message.%'
 		"ALTER TABLE instances ADD COLUMN ignore_groups INTEGER NOT NULL DEFAULT 0",
 		"ALTER TABLE instances ADD COLUMN ignore_status INTEGER NOT NULL DEFAULT 0",
 		"ALTER TABLE instances ADD COLUMN proxy_ciphertext TEXT NOT NULL DEFAULT ''",
+		"ALTER TABLE instances ADD COLUMN proxy_auto_reconnect INTEGER NOT NULL DEFAULT 0",
+		"ALTER TABLE instances ADD COLUMN proxy_retry_interval INTEGER NOT NULL DEFAULT 60",
+		"ALTER TABLE instances ADD COLUMN proxy_retry_attempts INTEGER NOT NULL DEFAULT 0",
+		"ALTER TABLE instances ADD COLUMN proxy_auto_reconnect INTEGER NOT NULL DEFAULT 0",
+		"ALTER TABLE instances ADD COLUMN proxy_retry_interval INTEGER NOT NULL DEFAULT 60",
+		"ALTER TABLE instances ADD COLUMN proxy_retry_attempts INTEGER NOT NULL DEFAULT 0",
 	} {
 		if _, err := s.db.ExecContext(ctx, migration); err != nil &&
 			!strings.Contains(strings.ToLower(err.Error()), "duplicate column name") {

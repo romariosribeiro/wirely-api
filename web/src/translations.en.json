@@ -761,5 +761,14 @@
   "Teste SMTP enviado": "SMTP test sent",
   "Backup concluído e atualização validada. Aguardando o Wirely reiniciar…": "Backup completed and update verified. Waiting for Wirely to restart…",
   "A conexão foi interrompida durante o reinício. Confirmando a nova versão…": "The connection was interrupted during restart. Confirming the new version…",
-  "A atualização demorou mais que o esperado. Recarregue a página para verificar a versão instalada.": "The update took longer than expected. Reload the page to check the installed version."
+  "A atualização demorou mais que o esperado. Recarregue a página para verificar a versão instalada.": "The update took longer than expected. Reload the page to check the installed version.",
+  "Reconexão automática": "Automatic reconnection",
+  "Quando o proxy voltar, troca a saída da VPS pela rota configurada.": "When the proxy returns, switch from the VPS connection to the configured route.",
+  "Intervalo entre verificações": "Interval between checks",
+  "segundos": "seconds",
+  "Tentativas": "Attempts",
+  "0 = ilimitadas": "0 = unlimited",
+  "Salvar configurações": "Save settings",
+  "Configurações de reconexão salvas.": "Reconnection settings saved.",
+  "Ative a reconexão automática ou salve o endereço novamente para voltar ao proxy.": "Enable automatic reconnection or save the address again to return to the proxy."
 }
