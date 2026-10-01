@@ -5,6 +5,11 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.17.3] - 2026-10-01
+
+- Update whatsmeow from `2e338d0ee73d` to `8b41cfe6d9c4` with the latest WhatsApp protocol definitions.
+- Include upstream handshake validation, rich-response parsing fixes, prekey signaling, and WASA root-secret persistence for message sending.
+
 ## [0.17.2] - 2026-10-01
 
 - Show whether each connected dashboard instance is currently using its configured proxy or the direct VPS route.
@@ -179,7 +184,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.17.2...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.17.3...HEAD
+[0.17.3]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.3
 [0.17.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.2
 [0.17.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.1
 [0.17.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.0
