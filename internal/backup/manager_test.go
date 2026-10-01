@@ -53,6 +53,11 @@ func TestCreateAndApplyRestore(t *testing.T) {
 	if _, err := manager.PrepareRestore(context.Background(), created.ID); err != nil {
 		t.Fatal(err)
 	}
+	parent := filepath.Dir(dataDirectory)
+	if err := os.Chmod(parent, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(parent, 0o700) })
 	restored, err := ApplyPending(dataDirectory)
 	if err != nil || !restored {
 		t.Fatalf("restore failed: restored=%v err=%v", restored, err)

@@ -5,6 +5,12 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.16.2] - 2026-10-01
+
+- Create restore staging and rollback directories inside the systemd-approved data area.
+- Prevent a prepared restore from trapping the service in a restart loop under `ProtectHome=read-only`.
+- Prevent the alert integrations screen from crashing before its first saved configuration.
+
 ## [0.16.1] - 2026-10-01
 
 - Exclude received-media caches and staged update binaries from safety backups, keeping update backups small and fast.
@@ -157,6 +163,7 @@ All notable changes to Wirely API are documented here. The project follows
 - Each instance continues to own a single webhook configuration.
 
 [Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.9.0...HEAD
+[0.16.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.16.2
 [0.16.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.16.1
 [0.16.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.16.0
 [0.15.3]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.15.3

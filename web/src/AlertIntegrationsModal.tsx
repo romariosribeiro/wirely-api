@@ -8,7 +8,10 @@ type Draft = AlertIntegrations & {
 }
 
 function toDraft(value: AlertIntegrations): Draft {
-  return { telegram: { ...value.telegram, token: '', clearToken: false }, smtp: { ...value.smtp, password: '', clearPassword: false } }
+  return {
+    telegram: { ...value.telegram, instanceIds: value.telegram.instanceIds ?? [], token: '', clearToken: false },
+    smtp: { ...value.smtp, instanceIds: value.smtp.instanceIds ?? [], password: '', clearPassword: false },
+  }
 }
 
 export function AlertIntegrationsModal({ instances, onClose }: { instances: Instance[]; onClose: () => void }) {
@@ -61,7 +64,7 @@ export function AlertIntegrationsModal({ instances, onClose }: { instances: Inst
     <header className="manageHeader"><div><p className="eyebrow">NOTIFICAÇÕES</p><h2 id="alert-integrations-title">Integrações de alertas</h2>
       <span className="operationsSubtitle">Receba avisos de queda e recuperação das instâncias selecionadas.</span></div>
       <button className="closeButton" type="button" aria-label="Fechar integrações" disabled={locked} onClick={onClose}>×</button></header>
-    {!draft ? <div className="operationsLoading"><span className="spinner" /><p>Carregando integrações…</p></div> :
+    {!draft ? <div className="operationsLoading">{error ? <><p className="pageError">{error}</p><button className="secondaryButton" type="button" onClick={onClose}>Fechar</button></> : <><span className="spinner" /><p>Carregando integrações…</p></>}</div> :
       <form className="alertIntegrationsBody" onSubmit={save}>
         {error && <p className="pageError">{error}</p>}{notice && <p className="manageFeedback manageSuccess">{notice}</p>}
         <section className="alertChannel">
@@ -99,5 +102,6 @@ export function AlertIntegrationsModal({ instances, onClose }: { instances: Inst
 }
 
 function InstancePicker({ instances, selected, disabled, onToggle }: { instances: Instance[]; selected: string[]; disabled: boolean; onToggle: (id: string) => void }) {
-  return <fieldset className="alertInstances"><legend>Instâncias monitoradas</legend>{instances.length === 0 ? <p>Nenhuma instância disponível.</p> : instances.map((instance) => <label key={instance.id}><input type="checkbox" checked={selected.includes(instance.id)} disabled={disabled} onChange={() => onToggle(instance.id)} /><span><strong>{instance.name}</strong><small className={`badge badge-${instance.status}`}>{instance.status}</small></span></label>)}</fieldset>
+  const selectedIds = selected ?? []
+  return <fieldset className="alertInstances"><legend>Instâncias monitoradas</legend>{instances.length === 0 ? <p>Nenhuma instância disponível.</p> : instances.map((instance) => <label key={instance.id}><input type="checkbox" checked={selectedIds.includes(instance.id)} disabled={disabled} onChange={() => onToggle(instance.id)} /><span><strong>{instance.name}</strong><small className={`badge badge-${instance.status}`}>{instance.status}</small></span></label>)}</fieldset>
 }

@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -108,6 +109,28 @@ func TestAlertIntegrationSecretsAreEncryptedAndPreserved(t *testing.T) {
 	targets, err = store.AlertTargets(context.Background())
 	if err != nil || targets.Token != "123456:telegram-secret" || targets.Password != "smtp-secret" {
 		t.Fatal("blank updates must preserve saved credentials")
+	}
+}
+
+func TestDefaultAlertIntegrationsUseEmptyInstanceLists(t *testing.T) {
+	store, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+	config, err := store.GetAlertIntegrations(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config.Telegram.InstanceIDs == nil || config.SMTP.InstanceIDs == nil {
+		t.Fatalf("instance lists must be empty arrays, not null: %#v", config)
+	}
+	body, err := json.Marshal(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(body), `"instanceIds":null`) {
+		t.Fatalf("API response contains a null instance list: %s", body)
 	}
 }
 

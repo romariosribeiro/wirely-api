@@ -75,7 +75,10 @@ type storedAlertIntegrations struct {
 }
 
 func defaultAlertIntegrations() storedAlertIntegrations {
-	return storedAlertIntegrations{SMTP: SMTPAlertConfig{Port: 587, Security: "starttls"}}
+	return storedAlertIntegrations{
+		Telegram: TelegramAlertConfig{InstanceIDs: []string{}},
+		SMTP:     SMTPAlertConfig{Port: 587, Security: "starttls", InstanceIDs: []string{}},
+	}
 }
 
 func (s *Store) readStoredAlertIntegrations(ctx context.Context) (storedAlertIntegrations, error) {
@@ -101,6 +104,12 @@ func (s *Store) readStoredAlertIntegrations(ctx context.Context) (storedAlertInt
 }
 
 func publicAlertIntegrations(stored storedAlertIntegrations) AlertIntegrations {
+	if stored.Telegram.InstanceIDs == nil {
+		stored.Telegram.InstanceIDs = []string{}
+	}
+	if stored.SMTP.InstanceIDs == nil {
+		stored.SMTP.InstanceIDs = []string{}
+	}
 	stored.Telegram.HasToken = stored.Token != ""
 	stored.SMTP.HasPassword = stored.Password != ""
 	return AlertIntegrations{Telegram: stored.Telegram, SMTP: stored.SMTP}

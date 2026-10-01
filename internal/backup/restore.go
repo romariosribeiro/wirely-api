@@ -31,8 +31,7 @@ func ApplyPending(dataDirectory string) (bool, error) {
 	if _, err := inspectArchive(archivePath); err != nil {
 		return false, err
 	}
-	parent := filepath.Dir(dataDirectory)
-	stage, err := os.MkdirTemp(parent, ".wirely-restore-stage-")
+	stage, err := os.MkdirTemp(backupDir, ".restore-stage-")
 	if err != nil {
 		return false, fmt.Errorf("create restore staging directory: %w", err)
 	}
@@ -44,7 +43,7 @@ func ApplyPending(dataDirectory string) (bool, error) {
 		return false, fmt.Errorf("%w: wirely.db is missing", ErrInvalidArchive)
 	}
 
-	rollback, err := os.MkdirTemp(parent, ".wirely-restore-rollback-")
+	rollback, err := os.MkdirTemp(backupDir, ".restore-rollback-")
 	if err != nil {
 		return false, fmt.Errorf("create restore rollback directory: %w", err)
 	}
