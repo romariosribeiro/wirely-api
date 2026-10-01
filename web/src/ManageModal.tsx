@@ -150,26 +150,46 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
   async function copy(value: string, input: HTMLInputElement | null) {
     setError('')
     let copied = false
-    try {
-      if (navigator.clipboard?.writeText) {
+    if (window.isSecureContext && navigator.clipboard?.writeText) {
+      try {
         await navigator.clipboard.writeText(value)
         copied = true
-      }
-    } catch { /* Clipboard API may be unavailable on plain HTTP. */ }
+      } catch { /* Fall back to the synchronous copy event below. */ }
+    }
     if (!copied) {
-      const target = input ?? document.createElement('textarea')
-      if (!input) {
-        target.value = value
-        target.setAttribute('readonly', '')
-        target.style.position = 'fixed'
-        target.style.opacity = '0'
-        target.style.pointerEvents = 'none'
-        document.body.appendChild(target)
+      const previousFocus = document.activeElement as HTMLElement | null
+      const previousSelection = window.getSelection()
+      const ranges = previousSelection ? Array.from({ length: previousSelection.rangeCount }, (_, index) => previousSelection.getRangeAt(index).cloneRange()) : []
+      const target = document.createElement('textarea')
+      target.value = value
+      target.setAttribute('readonly', '')
+      target.setAttribute('aria-hidden', 'true')
+      target.style.position = 'fixed'
+      target.style.inset = '0 auto auto 0'
+      target.style.width = '2px'
+      target.style.height = '2px'
+      target.style.opacity = '0.01'
+      target.style.pointerEvents = 'none'
+      ;(dialog.current ?? document.body).appendChild(target)
+      let copyEventHandled = false
+      const writeClipboard = (event: ClipboardEvent) => {
+        if (!event.clipboardData) return
+        event.preventDefault()
+        event.clipboardData.setData('text/plain', value)
+        copyEventHandled = true
       }
-      target.focus()
+      document.addEventListener('copy', writeClipboard, { once: true })
+      target.focus({ preventScroll: true })
       target.select()
-      copied = document.execCommand('copy')
-      if (!input) target.remove()
+      target.setSelectionRange(0, target.value.length)
+      let commandSucceeded = false
+      try { commandSucceeded = document.execCommand('copy') } catch { /* Browser blocked the legacy command. */ }
+      document.removeEventListener('copy', writeClipboard)
+      target.remove()
+      copied = commandSucceeded && copyEventHandled
+      previousSelection?.removeAllRanges()
+      ranges.forEach((range) => previousSelection?.addRange(range))
+      previousFocus?.focus({ preventScroll: true })
     }
     if (copied) {
       setNotice('Copiado.')

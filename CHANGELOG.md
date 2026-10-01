@@ -5,6 +5,11 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-10-01
+
+- Make management copy buttons use a synchronous clipboard event fallback on plain HTTP.
+- Only show copy success after the browser actually dispatches and accepts the clipboard event.
+
 ## [0.17.0] - 2026-10-01
 
 - Add per-instance automatic proxy recovery with a configurable check interval of at least 60 seconds.
@@ -170,6 +175,7 @@ All notable changes to Wirely API are documented here. The project follows
 - Each instance continues to own a single webhook configuration.
 
 [Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.9.0...HEAD
+[0.17.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.1
 [0.17.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.0
 [0.16.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.16.2
 [0.16.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.16.1
