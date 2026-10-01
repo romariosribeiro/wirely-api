@@ -17,6 +17,9 @@ const actionLabels: Record<string, string> = {
   'queue.retry': 'Envio reenviado', 'backup.create': 'Backup criado',
   'backup.restore': 'Restauração preparada', 'backup.delete': 'Backup excluído',
   'system.update': 'Wirely atualizada',
+  'alerts.integrations.update': 'Integrações de alertas atualizadas',
+  'alerts.telegram.test': 'Teste do Telegram enviado',
+  'alerts.smtp.test': 'Teste SMTP enviado',
 }
 
 const reasonLabels: Record<string, string> = {

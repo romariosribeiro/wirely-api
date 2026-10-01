@@ -170,6 +170,46 @@ dialog[open] { animation: modalIn .2s ease-out; }
 .passwordForm small { color: var(--muted); font-size: 11px; line-height: 1.6; }
 .passwordActions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 .manageModal { width: min(680px, calc(100vw - 32px)); }
+.alertIntegrationsModal { color: #e8ebf2; background: #10131a; border: 1px solid #323947; border-radius: 16px; padding: 0; width: min(790px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: hidden; box-shadow: 0 28px 100px #0009; }
+.alertIntegrationsModal[open] { display: flex; flex-direction: column; }
+.alertIntegrationsBody { min-height: 0; overflow-y: auto; padding: 20px 24px 0; scrollbar-width: thin; scrollbar-color: #394255 transparent; }
+.alertChannel { margin-bottom: 16px; padding: 18px; border: 1px solid #2a313e; border-radius: 12px; background: #0c0f15; }
+.alertChannelHeading { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid #242a35; }
+.alertChannelHeading h3 { margin: 0 0 4px; font-size: 13px; }
+.alertChannelHeading p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.channelIcon { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid #3c475b; border-radius: 10px; font-size: 13px; font-weight: 700; }
+.telegramIcon { color: #8ccfff; background: #229ed90d; border-color: #229ed94a; }
+.smtpIcon { color: #b9c6ff; background: #a5baff0b; border-color: #a5baff3d; }
+.alertFieldGrid { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-top: 16px; }
+.alertFieldGrid label { display: grid; align-content: end; gap: 7px; color: #c5ccda; font-size: 11px; }
+.alertFieldGrid input, .alertFieldGrid select { width: 100%; min-width: 0; }
+.smtpGrid { grid-template-columns: 2fr .7fr 1.1fr; }
+.smtpGrid label:nth-last-child(-n+2) { grid-column: span 1; }
+.smtpGrid label:last-child { grid-column: span 2; }
+.alertClear { display: flex; align-items: center; gap: 7px; width: fit-content; margin-top: 10px; color: #d99ca5; font-size: 10px; }
+.alertClear input, .alertInstances input { width: 14px; height: 14px; padding: 0; accent-color: #a5baff; }
+.alertInstances { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 17px 0 0; padding: 0; border: 0; }
+.alertInstances legend { grid-column: 1 / -1; margin-bottom: 2px; color: #c5ccda; font-size: 11px; }
+.alertInstances > label { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border: 1px solid #282f3b; border-radius: 8px; background: #11151d; cursor: pointer; }
+.alertInstances > label:has(input:checked) { border-color: #a5baff43; background: #a5baff07; }
+.alertInstances > label > span { display: flex; min-width: 0; flex: 1; align-items: center; justify-content: space-between; gap: 8px; }
+.alertInstances strong { overflow: hidden; font-size: 11px; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
+.alertInstances .badge { font-size: 8px; padding: 3px 5px; }
+.alertInstances > p { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 11px; }
+.alertTest { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.alertTest small { color: var(--muted); font-size: 10px; }
+.alertIntegrationsFooter { position: sticky; bottom: 0; display: flex; align-items: center; gap: 8px; margin: 20px -24px 0; padding: 14px 24px; border-top: 1px solid var(--line); background: #10131af5; backdrop-filter: blur(8px); }
+.alertIntegrationsFooter > span { flex: 1; color: var(--muted); font-size: 10px; }
+@media (max-width: 680px) {
+  .alertIntegrationsBody { padding: 16px 16px 0; }
+  .alertChannel { padding: 14px; }
+  .alertChannelHeading { grid-template-columns: 32px minmax(0, 1fr); }
+  .alertChannelHeading .manageSwitch { grid-column: 1 / -1; justify-self: end; }
+  .alertFieldGrid, .smtpGrid, .alertInstances { grid-template-columns: 1fr; }
+  .smtpGrid label, .smtpGrid label:last-child { grid-column: auto; }
+  .alertIntegrationsFooter { flex-wrap: wrap; margin-left: -16px; margin-right: -16px; padding: 12px 16px; }
+  .alertIntegrationsFooter > span { flex-basis: 100%; }
+}
 .manageModal[open] { display: flex; flex-direction: column; overflow: hidden; }
 .manageHeader, .manageFooter { flex-shrink: 0; }
 .manageModal .manageBody { min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #394255 transparent; }

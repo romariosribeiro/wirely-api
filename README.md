@@ -50,6 +50,7 @@ written in Go and the panel uses React, TypeScript, and Vite.
 - WhatsApp profile management for name, about, photo, and privacy settings
 - Operational metrics dashboard with 24-hour, 7-day, and 30-day views
 - Prometheus endpoint at `GET /metrics`, operational alerts, and structured JSON logs
+- Encrypted Telegram and SMTP notifications for instance outages and recoveries, with per-channel instance selection and delivery tests
 - Persistent administrative audit trail, login lockout, and per-instance API rate limiting
 - Daily automatic backups, owner-only panel restore, downloads, retention, and pre-restore safety copies
 - Complete OpenAPI coverage for public and administrative routes

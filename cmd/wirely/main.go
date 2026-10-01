@@ -11,6 +11,7 @@ import (
 	"github.com/romariosribeiro/wirely-api/internal/backup"
 	"github.com/romariosribeiro/wirely-api/internal/buildinfo"
 	"github.com/romariosribeiro/wirely-api/internal/engine"
+	"github.com/romariosribeiro/wirely-api/internal/notify"
 	"github.com/romariosribeiro/wirely-api/internal/outbox"
 	"github.com/romariosribeiro/wirely-api/internal/server"
 	"github.com/romariosribeiro/wirely-api/internal/storage"
@@ -69,6 +70,9 @@ func main() {
 		slog.Info("old received media removed", "count", removed)
 	}
 	webhookDispatcher := webhook.NewDispatcher(store)
+	alertDispatcher := notify.NewDispatcher(store)
+	alertDispatcher.Start()
+	defer alertDispatcher.Close()
 	eventHub := stream.New()
 	if err := webhookDispatcher.Start(); err != nil {
 		fail("failed to start webhook delivery queue", err)
@@ -76,6 +80,7 @@ func main() {
 	defer webhookDispatcher.Close()
 	whatsappManager.SetEventHandler(func(event engine.Event) {
 		eventHub.Publish(event)
+		alertDispatcher.Dispatch(event)
 		inserted, saveErr := store.SaveActivityEvent(context.Background(), event.ID, event.InstanceID, event.Event, event.Timestamp, event.Data)
 		if saveErr != nil {
 			slog.Error("failed to persist event", "event_id", event.ID, "event", event.Event, "instance_id", event.InstanceID, "error", saveErr)
@@ -122,6 +127,7 @@ func main() {
 		Queue:         messageQueue,
 		Backups:       backupManager,
 		Updates:       updateManager,
+		Alerts:        alertDispatcher,
 		RateLimit:     envPositiveInt("WIRELY_API_RATE_LIMIT", 120),
 		SecureCookies: strings.EqualFold(os.Getenv("WIRELY_SECURE_COOKIE"), "true"),
 		Restart: func() {

@@ -23,9 +23,9 @@ func buildExtendedOpenAPI() []byte {
 	if json.Unmarshal([]byte(openAPISpec), &spec) != nil {
 		return []byte(openAPISpec)
 	}
-	spec["info"].(map[string]any)["version"] = "0.15.3"
+	spec["info"].(map[string]any)["version"] = "0.16.0"
 	paths := spec["paths"].(map[string]any)
-	spec["tags"] = append(spec["tags"].([]any), map[string]any{"name": "Status"})
+	spec["tags"] = append(spec["tags"].([]any), map[string]any{"name": "Status"}, map[string]any{"name": "Alertas"})
 	schemas := spec["components"].(map[string]any)["schemas"].(map[string]any)
 	var additions map[string]any
 	_ = json.Unmarshal([]byte(openAPIAdditionSchemas), &additions)
@@ -43,6 +43,12 @@ func buildExtendedOpenAPI() []byte {
 	paths["/api/presence/{phone}"] = map[string]any{"get": getPresence}
 	paths["/api/events"] = map[string]any{"get": map[string]any{"tags": []string{"Atividade"}, "summary": "Receber eventos em tempo real por SSE", "security": []any{map[string]any{"BearerAuth": []any{}}}, "parameters": []any{map[string]any{"name": "events", "in": "query", "schema": map[string]any{"type": "string"}, "description": "Eventos separados por vírgula"}}, "responses": map[string]any{"200": map[string]any{"description": "Fluxo Server-Sent Events", "content": map[string]any{"text/event-stream": map[string]any{"schema": map[string]any{"type": "string"}}}}}}}
 	addJSONPath(paths, "/api/status/text", "post", "Status", "Publicar Status de texto", "StatusTextRequest", 201)
+	paths["/api/alert-integrations"] = map[string]any{
+		"get": cookieOperation("Consultar integrações de alertas", 200, "AlertIntegrations", nil),
+		"put": cookieOperation("Salvar integrações Telegram e SMTP", 200, "AlertIntegrations", jsonBody("AlertIntegrationsUpdate")),
+	}
+	paths["/api/alert-integrations/test/telegram"] = map[string]any{"post": cookieOperation("Enviar alerta de teste pelo Telegram", 200, "AlertTestResult", nil)}
+	paths["/api/alert-integrations/test/smtp"] = map[string]any{"post": cookieOperation("Enviar alerta de teste por SMTP", 200, "AlertTestResult", nil)}
 	paths["/api/status/media"] = map[string]any{"post": bearerOperation("Status", "Publicar Status com imagem ou vídeo", 201, "SentMessage", map[string]any{"required": true, "content": map[string]any{"multipart/form-data": map[string]any{"schema": map[string]any{"$ref": "#/components/schemas/StatusMediaRequest"}}}})}
 	addJSONPath(paths, "/api/groups/{groupJID}/description", "patch", "Grupos", "Alterar descrição do grupo", "GroupDescriptionRequest", 204)
 	paths["/api/groups/{groupJID}/photo"] = map[string]any{
@@ -126,6 +132,12 @@ func bearerOperation(tag, summary string, status int, schema string, body map[st
 	return operation
 }
 
+func cookieOperation(summary string, status int, schema string, body map[string]any) map[string]any {
+	operation := bearerOperation("Alertas", summary, status, schema, body)
+	operation["security"] = []any{map[string]any{"CookieAuth": []any{}}}
+	return operation
+}
+
 const openAPIAdditionSchemas = `{
   "ReplyOptions":{"type":"object","required":["messageId"],"properties":{"messageId":{"type":"string","description":"ID da mensagem respondida."},"participant":{"type":"string","description":"Autor da mensagem; necessário ao responder mensagens recebidas em grupo."},"text":{"type":"string","description":"Texto citado opcional quando disponível."}}},
   "LiveLocationRequest":{"type":"object","required":["recipient","latitude","longitude"],"properties":{"recipient":{"type":"string"},"latitude":{"type":"number","minimum":-90,"maximum":90},"longitude":{"type":"number","minimum":-180,"maximum":180},"accuracy":{"type":"integer"},"speed":{"type":"number"},"bearing":{"type":"integer","maximum":359},"caption":{"type":"string"},"sequence":{"type":"integer"},"timeOffset":{"type":"integer"}}},
@@ -143,5 +155,10 @@ const openAPIAdditionSchemas = `{
   "GroupJoinApprovalRequest":{"type":"object","required":["enabled"],"properties":{"enabled":{"type":"boolean"}}},
   "GroupJoinRequestAction":{"type":"object","required":["action","participants"],"properties":{"action":{"type":"string","enum":["approve","reject"]},"participants":{"type":"array","items":{"type":"string"}}}},
   "GroupJoinRequestList":{"type":"object","properties":{"data":{"type":"array","items":{"type":"object","properties":{"jid":{"type":"string"},"phone":{"type":"string"},"requestedAt":{"type":"string","format":"date-time"}}}}}},
-  "GroupParticipantList":{"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/components/schemas/GroupParticipant"}}}}
+  "GroupParticipantList":{"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/components/schemas/GroupParticipant"}}}},
+  "TelegramAlertConfig":{"type":"object","properties":{"enabled":{"type":"boolean"},"hasToken":{"type":"boolean","readOnly":true},"chatId":{"type":"string"},"instanceIds":{"type":"array","items":{"type":"string"}}}},
+  "SMTPAlertConfig":{"type":"object","properties":{"enabled":{"type":"boolean"},"host":{"type":"string"},"port":{"type":"integer","minimum":1,"maximum":65535},"security":{"type":"string","enum":["starttls","tls","none"]},"username":{"type":"string"},"hasPassword":{"type":"boolean","readOnly":true},"from":{"type":"string"},"recipient":{"type":"string"},"instanceIds":{"type":"array","items":{"type":"string"}}}},
+  "AlertIntegrations":{"type":"object","properties":{"telegram":{"$ref":"#/components/schemas/TelegramAlertConfig"},"smtp":{"$ref":"#/components/schemas/SMTPAlertConfig"}}},
+  "AlertIntegrationsUpdate":{"type":"object","properties":{"telegram":{"allOf":[{"$ref":"#/components/schemas/TelegramAlertConfig"}],"properties":{"token":{"type":"string","writeOnly":true},"clearToken":{"type":"boolean"}}},"smtp":{"allOf":[{"$ref":"#/components/schemas/SMTPAlertConfig"}],"properties":{"password":{"type":"string","writeOnly":true},"clearPassword":{"type":"boolean"}}}}},
+  "AlertTestResult":{"type":"object","properties":{"status":{"type":"string","enum":["sent"]}}}
 }`

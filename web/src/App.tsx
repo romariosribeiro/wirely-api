@@ -12,6 +12,7 @@ import { UsersModal } from './UsersModal'
 import { MetricsModal } from './MetricsModal'
 import { OperationsModal } from './OperationsModal'
 import { UpdateModal } from './UpdateModal'
+import { AlertIntegrationsModal } from './AlertIntegrationsModal'
 import { useLanguage } from './i18n'
 
 const roleLabels: Record<UserRole, string> = { owner: 'Proprietário', admin: 'Administrador', operator: 'Operador', viewer: 'Visualizador' }
@@ -184,6 +185,7 @@ function Dashboard({
   const [usersOpen, setUsersOpen] = useState(false)
   const [metricsOpen, setMetricsOpen] = useState(false)
   const [operationsOpen, setOperationsOpen] = useState(false)
+  const [integrationsOpen, setIntegrationsOpen] = useState(false)
   const [updateOpen, setUpdateOpen] = useState(false)
   const [metrics, setMetrics] = useState<MetricsSnapshot | null>(null)
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
@@ -349,6 +351,7 @@ function Dashboard({
           <span className="status online">API online</span>
           <button className="textButton" type="button" onClick={() => setMetricsOpen(true)}>Métricas</button>
           <button className="textButton" type="button" onClick={() => setOperationsOpen(true)}>Operações</button>
+          {canAdmin && <button className="textButton" type="button" onClick={() => setIntegrationsOpen(true)}>Integrações</button>}
           <button className="textButton docsNavButton" type="button" onClick={() => setDocsOpen(true)}>
             <span>Documentação</span><span>Docs</span>
           </button>
@@ -466,6 +469,7 @@ function Dashboard({
 
       {metricsOpen && <MetricsModal onClose={() => setMetricsOpen(false)} />}
       {operationsOpen && <OperationsModal user={user} onClose={() => setOperationsOpen(false)} />}
+      {integrationsOpen && <AlertIntegrationsModal instances={instances} onClose={() => setIntegrationsOpen(false)} />}
       {updateOpen && updateStatus && <UpdateModal initial={updateStatus} onClose={() => setUpdateOpen(false)} onChanged={setUpdateStatus} />}
       {docsOpen && <DocsModal instances={instances} canManage={canAdmin} onClose={() => setDocsOpen(false)}
         onManage={(instance) => { setDocsOpen(false); setManaged(instance) }} />}

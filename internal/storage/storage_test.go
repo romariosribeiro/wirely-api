@@ -55,6 +55,62 @@ func TestInstanceTokenLifecycle(t *testing.T) {
 	}
 }
 
+func TestAlertIntegrationSecretsAreEncryptedAndPreserved(t *testing.T) {
+	store, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+	instance, err := store.CreateInstance(context.Background(), "Alerts")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var update AlertIntegrationsUpdate
+	update.Telegram.Enabled = true
+	update.Telegram.Token = "123456:telegram-secret"
+	update.Telegram.ChatID = "-100123"
+	update.Telegram.InstanceIDs = []string{instance.ID}
+	update.SMTP.Enabled = true
+	update.SMTP.Host = "smtp.example.com"
+	update.SMTP.Port = 587
+	update.SMTP.Security = "starttls"
+	update.SMTP.Username = "alerts@example.com"
+	update.SMTP.Password = "smtp-secret"
+	update.SMTP.From = "Wirely <alerts@example.com>"
+	update.SMTP.Recipient = "owner@example.com"
+	update.SMTP.InstanceIDs = []string{instance.ID}
+	config, err := store.SaveAlertIntegrations(context.Background(), update)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !config.Telegram.HasToken || !config.SMTP.HasPassword {
+		t.Fatalf("missing credential flags: %#v", config)
+	}
+	var raw string
+	if err := store.db.QueryRow("SELECT value FROM settings WHERE key = ?", alertIntegrationsKey).Scan(&raw); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(raw, "telegram-secret") || strings.Contains(raw, "smtp-secret") {
+		t.Fatal("alert secrets must not be stored as plaintext")
+	}
+	targets, err := store.AlertTargets(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if targets.Token != update.Telegram.Token || targets.Password != update.SMTP.Password {
+		t.Fatal("encrypted alert secrets did not round trip")
+	}
+	update.Telegram.Token = ""
+	update.SMTP.Password = ""
+	if _, err := store.SaveAlertIntegrations(context.Background(), update); err != nil {
+		t.Fatal(err)
+	}
+	targets, err = store.AlertTargets(context.Background())
+	if err != nil || targets.Token != "123456:telegram-secret" || targets.Password != "smtp-secret" {
+		t.Fatal("blank updates must preserve saved credentials")
+	}
+}
+
 func TestMessageStatusUsesLatestReceipt(t *testing.T) {
 	store, err := Open(t.TempDir())
 	if err != nil {

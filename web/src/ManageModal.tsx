@@ -37,6 +37,7 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [copiedValue, setCopiedValue] = useState('')
   const [loadVersion, setLoadVersion] = useState(0)
   const [proxy, setProxy] = useState<ProxyConfig | null>(null)
   const [connectionState, setConnectionState] = useState<ConnectionState | null>(null)
@@ -138,17 +139,35 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
   }
 
   async function copy(value: string, input: HTMLInputElement | null) {
+    setError('')
+    let copied = false
     try {
-      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(value)
-      else {
-        input?.focus()
-        input?.select()
-        if (!document.execCommand('copy')) throw new Error('copy failed')
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value)
+        copied = true
       }
+    } catch { /* Clipboard API may be unavailable on plain HTTP. */ }
+    if (!copied) {
+      const target = input ?? document.createElement('textarea')
+      if (!input) {
+        target.value = value
+        target.setAttribute('readonly', '')
+        target.style.position = 'fixed'
+        target.style.opacity = '0'
+        target.style.pointerEvents = 'none'
+        document.body.appendChild(target)
+      }
+      target.focus()
+      target.select()
+      copied = document.execCommand('copy')
+      if (!input) target.remove()
+    }
+    if (copied) {
       setNotice('Copiado.')
-    } catch {
-      input?.focus()
-      input?.select()
+      setCopiedValue(value)
+      window.setTimeout(() => setCopiedValue((current) => current === value ? '' : current), 1800)
+    } else {
+      input?.focus(); input?.select()
       setError('Selecione e copie o valor manualmente.')
     }
   }
@@ -377,10 +396,10 @@ export function ManageModal({ instance, onClose, onChanged, onDeleted }: Props) 
                 <ol className="proxyGuideSteps">
                   <li><span>Abra o PowerShell no Windows e mantenha a janela aberta.</span>
                     <div className="proxyGuideCode"><code>{tunnelCommand}</code><button type="button" className="manageSubtleButton"
-                      onClick={() => void copy(tunnelCommand, null)}>Copiar</button></div></li>
+                      onClick={() => void copy(tunnelCommand, null)}>{copiedValue === tunnelCommand ? 'Copiado ✓' : 'Copiar'}</button></div></li>
                   <li><span>Na VPS, confirme que o tráfego está saindo pelo IP do Windows.</span>
                     <div className="proxyGuideCode"><code>{tunnelTest}</code><button type="button" className="manageSubtleButton"
-                      onClick={() => void copy(tunnelTest, null)}>Copiar</button></div></li>
+                      onClick={() => void copy(tunnelTest, null)}>{copiedValue === tunnelTest ? 'Copiado ✓' : 'Copiar'}</button></div></li>
                   <li><span>Use este endereço no proxy da instância.</span>
                     <div className="proxyGuideCode"><code>{tunnelProxyURL}</code><button type="button" className="manageSubtleButton"
                       onClick={() => setProxyURL(tunnelProxyURL)}>Preencher acima</button></div></li>

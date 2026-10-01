@@ -179,6 +179,11 @@ export type Alert = {
   instanceId?: string
 }
 
+export type AlertIntegrations = {
+  telegram: { enabled: boolean; hasToken: boolean; chatId: string; instanceIds: string[] }
+  smtp: { enabled: boolean; host: string; port: number; security: 'starttls' | 'tls' | 'none'; username: string; hasPassword: boolean; from: string; recipient: string; instanceIds: string[] }
+}
+
 export type Backup = {
   id: string
   createdAt: string

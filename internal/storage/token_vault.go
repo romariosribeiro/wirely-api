@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -22,8 +23,19 @@ func (s *Store) openTokenVault(directory string) error {
 		if err := s.db.QueryRow("SELECT COUNT(*) FROM instances WHERE api_token_ciphertext != ''").Scan(&count); err != nil {
 			return fmt.Errorf("check encrypted tokens: %w", err)
 		}
+		var alertValue string
+		alertErr := s.db.QueryRow("SELECT value FROM settings WHERE key = ?", alertIntegrationsKey).Scan(&alertValue)
+		if alertErr != nil && !errors.Is(alertErr, sql.ErrNoRows) {
+			return fmt.Errorf("check encrypted alert credentials: %w", alertErr)
+		}
+		if alertErr == nil {
+			var alerts storedAlertIntegrations
+			if json.Unmarshal([]byte(alertValue), &alerts) == nil && (alerts.Token != "" || alerts.Password != "") {
+				count++
+			}
+		}
 		if count > 0 {
-			return errors.New("token.key is missing: restore it from backup; existing encrypted tokens must not be overwritten")
+			return errors.New("token.key is missing: restore it from backup; existing encrypted credentials must not be overwritten")
 		}
 		key := make([]byte, 32)
 		if _, err := rand.Read(key); err != nil {

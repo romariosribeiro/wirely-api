@@ -174,6 +174,11 @@ type WebhookTester interface {
 	Test(string) (string, error)
 }
 
+type AlertNotifier interface {
+	TestTelegram(context.Context) error
+	TestSMTP(context.Context) error
+}
+
 type EventStream interface {
 	Subscribe(string) (<-chan engine.Event, func())
 }
@@ -205,6 +210,7 @@ type Dependencies struct {
 	RateLimit      int
 	Backups        BackupManager
 	Updates        UpdateManager
+	Alerts         AlertNotifier
 	Restart        func()
 }
 
@@ -238,6 +244,7 @@ type Server struct {
 	limiter        *rateLimiter
 	backups        BackupManager
 	updates        UpdateManager
+	alerts         AlertNotifier
 	restart        func()
 	httpMetrics    *httpMetrics
 }
@@ -316,7 +323,7 @@ func New(dependencies Dependencies) *Server {
 	webhookTester, _ := dependencies.Webhooks.(WebhookTester)
 	server := &Server{store: dependencies.Store, engine: dependencies.Engine, connector: connector, sender: sender, structured: structured, statuses: statuses, presence: presence, presenceState: presenceState, groups: groups, advancedGroups: advancedGroups, profile: profile, whatsAppUsers: whatsAppUsers, webhooks: dependencies.Webhooks, events: dependencies.Events, webhookTester: webhookTester,
 		contacts: contacts, chatSender: chatSender, receivedMedia: receivedMedia, forwarder: forwarder, messageActions: messageActions, disappearing: disappearing, organization: organization, queue: dependencies.Queue, secureCookies: dependencies.SecureCookies, startedAt: time.Now(),
-		limiter: newRateLimiter(dependencies.RateLimit, time.Minute), backups: dependencies.Backups, updates: dependencies.Updates, restart: dependencies.Restart,
+		limiter: newRateLimiter(dependencies.RateLimit, time.Minute), backups: dependencies.Backups, updates: dependencies.Updates, alerts: dependencies.Alerts, restart: dependencies.Restart,
 		httpMetrics: newHTTPMetrics()}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", server.health)
@@ -426,6 +433,10 @@ func New(dependencies Dependencies) *Server {
 	mux.Handle("DELETE /api/users/{userID}", server.requireRole(storage.RoleOwner, server.auditAction("user.delete", "user", "userID", http.HandlerFunc(server.deleteUser))))
 	mux.Handle("GET /api/metrics", server.requireRole(storage.RoleViewer, http.HandlerFunc(server.metrics)))
 	mux.Handle("GET /api/alerts", server.requireRole(storage.RoleViewer, http.HandlerFunc(server.listAlerts)))
+	mux.Handle("GET /api/alert-integrations", server.requireRole(storage.RoleAdmin, http.HandlerFunc(server.getAlertIntegrations)))
+	mux.Handle("PUT /api/alert-integrations", server.requireRole(storage.RoleAdmin, server.auditAction("alerts.integrations.update", "system", "alerts", http.HandlerFunc(server.updateAlertIntegrations))))
+	mux.Handle("POST /api/alert-integrations/test/telegram", server.requireRole(storage.RoleAdmin, server.auditAction("alerts.telegram.test", "system", "alerts", http.HandlerFunc(server.testTelegramAlerts))))
+	mux.Handle("POST /api/alert-integrations/test/smtp", server.requireRole(storage.RoleAdmin, server.auditAction("alerts.smtp.test", "system", "alerts", http.HandlerFunc(server.testSMTPAlerts))))
 	mux.Handle("GET /api/instances", server.requireRole(storage.RoleViewer, http.HandlerFunc(server.listInstances)))
 	mux.Handle("POST /api/instances", server.requireRole(storage.RoleAdmin, server.auditAction("instance.create", "instance", "", http.HandlerFunc(server.createInstance))))
 	mux.Handle("POST /api/instances/{id}/connect", server.requireRole(storage.RoleOperator, server.auditAction("instance.connect", "instance", "id", http.HandlerFunc(server.connectInstance))))

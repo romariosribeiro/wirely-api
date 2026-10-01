@@ -5,6 +5,14 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-01
+
+- Add encrypted Telegram and SMTP alert integrations to the management panel.
+- Allow administrators to select monitored instances independently for each channel and send delivery tests.
+- Notify on disconnected, error, logout, and subsequent recovery states without producing false recovery alerts during startup.
+- Keep bot tokens and SMTP passwords encrypted with the installation key and out of API responses and logs.
+- Fix proxy-guide copy buttons on plain HTTP by providing a clipboard fallback and inline confirmation.
+
 ## [0.15.3] - 2026-09-22
 
 - Reconcile the persisted instance status with the live WhatsApp socket before
@@ -142,6 +150,7 @@ All notable changes to Wirely API are documented here. The project follows
 - Each instance continues to own a single webhook configuration.
 
 [Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.9.0...HEAD
+[0.16.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.16.0
 [0.15.3]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.15.3
 [0.15.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.15.2
 [0.15.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.15.1
