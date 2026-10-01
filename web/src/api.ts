@@ -29,6 +29,8 @@ export type Instance = {
   readMessages: boolean
   ignoreGroups: boolean
   ignoreStatus: boolean
+  connectionRoute?: 'proxy' | 'direct'
+  proxyFallback?: boolean
 }
 
 export type InstanceSettings = Pick<Instance,

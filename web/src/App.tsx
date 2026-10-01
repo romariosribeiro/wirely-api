@@ -448,7 +448,19 @@ function Dashboard({
                   </div>
                 </div>
                 <div className="instanceActions">
-                  <span className={`badge badge-${instance.status}`}>{statusLabel(instance.status)}</span>
+                  <div className="instanceBadges">
+                    <span className={`badge badge-${instance.status}`}>{statusLabel(instance.status)}</span>
+                    {instance.status === 'connected' && instance.connectionRoute && (
+                      <span
+                        className={`badge routeBadge routeBadge-${instance.connectionRoute}`}
+                        title={instance.connectionRoute === 'proxy'
+                          ? 'Conectada através do proxy configurado'
+                          : instance.proxyFallback
+                            ? 'Proxy indisponível: usando temporariamente a saída direta da VPS'
+                            : 'Conectada diretamente pela VPS'}
+                      >{instance.connectionRoute === 'proxy' ? 'PROXY' : 'VPS'}</span>
+                    )}
+                  </div>
                   {canOperate && instance.status !== 'connected' && (
                     <button className="secondaryButton" type="button" onClick={() => void connectInstance(instance)}>Conectar</button>
                   )}

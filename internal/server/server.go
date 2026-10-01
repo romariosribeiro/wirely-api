@@ -589,14 +589,23 @@ func (s *Server) listInstances(w http.ResponseWriter, r *http.Request) {
 	}
 	// The database status is durable but can lag behind the live socket after a
 	// fast reconnect or a late event. Reconcile it before rendering the panel.
-	if s.engine != nil {
-		for index := range instances {
-			if state, stateErr := s.engine.State(instances[index].ID); stateErr == nil {
-				instances[index].Status = state.Status
-			}
+	items := make([]struct {
+		storage.Instance
+		ConnectionRoute string `json:"connectionRoute,omitempty"`
+		ProxyFallback   bool   `json:"proxyFallback,omitempty"`
+	}, len(instances))
+	for index := range instances {
+		items[index].Instance = instances[index]
+		if s.engine == nil {
+			continue
+		}
+		if state, stateErr := s.engine.State(instances[index].ID); stateErr == nil {
+			items[index].Status = state.Status
+			items[index].ConnectionRoute = state.ConnectionRoute
+			items[index].ProxyFallback = state.ProxyFallback
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"data": instances})
+	writeJSON(w, http.StatusOK, map[string]any{"data": items})
 }
 
 func (s *Server) createInstance(w http.ResponseWriter, r *http.Request) {

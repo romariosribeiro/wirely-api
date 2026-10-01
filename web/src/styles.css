@@ -97,11 +97,14 @@ p { line-height: 1.65; }
 .instanceIdentity small { color: var(--muted); font-size: 11px; }
 .instanceAvatar { flex: 0 0 36px; width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid #333b50; border-radius: 10px; background: linear-gradient(145deg, #242c40, #191f2d); color: #b8c7f1; font-size: 14px; font-weight: 550; }
 .instanceActions { flex-shrink: 0; gap: 8px; }
-.instanceActions .badge { margin-right: 10px; }
+.instanceBadges { display: flex; align-items: center; gap: 6px; margin-right: 10px; }
 .badge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; border: 1px solid #323947; border-radius: 5px; padding: 4px 7px; font-size: 10px; font-weight: 500; line-height: 1.2; color: #a6afbe; background: #ffffff03; white-space: nowrap; }
 .badge-connected { color: #89d4b4; background: #65ba960a; border-color: #65ba9633; }
 .badge-connecting, .badge-qr { color: #b0c1fa; background: #a5baff0a; border-color: #a5baff33; }
 .badge-error { color: #f5a3a9; background: #f5a3a90a; border-color: #f5a3a933; }
+.routeBadge { padding-inline: 6px; letter-spacing: .07em; font-size: 8px; font-weight: 650; }
+.routeBadge-proxy { color: #aebefa; background: #91a8f70c; border-color: #91a8f73d; }
+.routeBadge-direct { color: #d0b27e; background: #d0a96c0a; border-color: #d0a96c38; }
 .emptyState { text-align: center; padding: 48px 24px; }
 .emptyIcon { display: grid; place-items: center; width: 40px; height: 40px; margin: 0 auto 18px; border: 1px dashed #3b455b; border-radius: 12px; color: var(--accent); font-size: 21px; }
 .emptyState h3 { margin-bottom: 6px; }
@@ -337,7 +340,7 @@ dialog[open] { animation: modalIn .2s ease-out; }
   .sectionTitle { padding: 16px; }
   .instanceRow { padding: 16px; gap: 18px; }
   .instanceActions { width: 100%; justify-content: flex-end; }
-  .instanceActions .badge { margin-right: auto; }
+  .instanceBadges { margin-right: auto; }
   .primaryButton, .secondaryButton, .manageDelete, .createForm button { min-height: 40px; padding: 9px 11px; }
   .closeButton { width: 34px; height: 34px; }
   .modalHeader, .manageHeader { padding: 18px; }
@@ -663,7 +666,7 @@ select:focus { border-color: #8ea5eb; box-shadow: 0 0 0 3px #a5baff12; }
 }
 @media (max-width: 580px) {
   .instanceActions { display: grid; grid-template-columns: repeat(3, auto); }
-  .instanceActions .badge { grid-column: 1 / -1; margin-right: 0; justify-self: start; }
+  .instanceBadges { grid-column: 1 / -1; margin-right: 0; justify-self: start; }
   .activityItemHead { align-items: flex-start; flex-direction: column; gap: 4px; }
   .activityFooter { align-items: stretch; flex-direction: column; }
   .activityFooter > div { justify-content: space-between; }
@@ -750,7 +753,7 @@ select:focus { border-color: #8ea5eb; box-shadow: 0 0 0 3px #a5baff12; }
 }
 @media (max-width: 580px) {
   .instanceActions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .instanceActions .badge { grid-column: 1 / -1; }
+  .instanceBadges { grid-column: 1 / -1; }
   .instanceActions button { width: 100%; }
   .inboxHeader { padding: 14px 16px; }
   .inboxHeader h2 { font-size: 14px; }

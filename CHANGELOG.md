@@ -5,6 +5,11 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.17.2] - 2026-10-01
+
+- Show whether each connected dashboard instance is currently using its configured proxy or the direct VPS route.
+- Include `connectionRoute` and proxy fallback state in the administrative instance list without additional panel requests.
+
 ## [0.17.1] - 2026-10-01
 
 - Make management copy buttons use a synchronous clipboard event fallback on plain HTTP.
@@ -174,7 +179,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.17.2...HEAD
+[0.17.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.2
 [0.17.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.1
 [0.17.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.0
 [0.16.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.16.2
