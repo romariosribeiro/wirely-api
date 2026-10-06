@@ -189,6 +189,11 @@ export type AlertIntegrations = {
   smtp: { enabled: boolean; host: string; port: number; security: 'starttls' | 'tls' | 'none'; username: string; hasPassword: boolean; from: string; recipient: string; instanceIds: string[] }
 }
 
+export type AlertIntegrationsUpdate = {
+  telegram: Omit<AlertIntegrations['telegram'], 'hasToken'> & { token: string; clearToken: boolean }
+  smtp: Omit<AlertIntegrations['smtp'], 'hasPassword'> & { password: string; clearPassword: boolean }
+}
+
 export type Backup = {
   id: string
   createdAt: string

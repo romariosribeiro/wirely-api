@@ -5,6 +5,11 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.17.5] - 2026-10-06
+
+- Fix saving SMTP and Telegram integrations in the panel by excluding read-only credential flags from update requests.
+- Preserve saved credentials when password and token fields are left blank.
+
 ## [0.17.4] - 2026-10-06
 
 - Update whatsmeow from `8b41cfe6d9c4` to `9399289b022b` with updated WhatsApp protocols, split socket frame fixes, and improved retry receipt handling.
@@ -189,7 +194,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.17.4...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.17.5...HEAD
+[0.17.5]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.5
 [0.17.4]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.4
 [0.17.3]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.3
 [0.17.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.2

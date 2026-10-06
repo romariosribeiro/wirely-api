@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react'
 
-import { request, type AlertIntegrations, type Instance } from './api'
+import { request, type AlertIntegrations, type AlertIntegrationsUpdate, type Instance } from './api'
 
 type Draft = AlertIntegrations & {
   telegram: AlertIntegrations['telegram'] & { token: string; clearToken: boolean }
@@ -43,7 +43,28 @@ export function AlertIntegrationsModal({ instances, onClose }: { instances: Inst
     if (!draft) return
     setBusy('save'); setError(''); setNotice('')
     try {
-      const saved = await request<AlertIntegrations>('/api/alert-integrations', { method: 'PUT', body: JSON.stringify(draft) })
+      const payload: AlertIntegrationsUpdate = {
+        telegram: {
+          enabled: draft.telegram.enabled,
+          token: draft.telegram.token,
+          clearToken: draft.telegram.clearToken,
+          chatId: draft.telegram.chatId,
+          instanceIds: draft.telegram.instanceIds,
+        },
+        smtp: {
+          enabled: draft.smtp.enabled,
+          host: draft.smtp.host,
+          port: draft.smtp.port,
+          security: draft.smtp.security,
+          username: draft.smtp.username,
+          password: draft.smtp.password,
+          clearPassword: draft.smtp.clearPassword,
+          from: draft.smtp.from,
+          recipient: draft.smtp.recipient,
+          instanceIds: draft.smtp.instanceIds,
+        },
+      }
+      const saved = await request<AlertIntegrations>('/api/alert-integrations', { method: 'PUT', body: JSON.stringify(payload) })
       setDraft(toDraft(saved)); setNotice('Integrações salvas com segurança.')
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Falha ao salvar integrações.') }
     finally { setBusy('') }
