@@ -5,6 +5,11 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.17.4] - 2026-10-06
+
+- Update whatsmeow from `8b41cfe6d9c4` to `9399289b022b` with updated WhatsApp protocols, split socket frame fixes, and improved retry receipt handling.
+- Adapt blocklist queries and updates to the new upstream API, preserving phone numbers for LID entries and excluding inactive contacts.
+
 ## [0.17.3] - 2026-10-01
 
 - Update whatsmeow from `2e338d0ee73d` to `8b41cfe6d9c4` with the latest WhatsApp protocol definitions.
@@ -184,7 +189,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.17.3...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.17.4...HEAD
+[0.17.4]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.4
 [0.17.3]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.3
 [0.17.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.2
 [0.17.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.1

@@ -66,11 +66,11 @@ func (m *Manager) GetBlocklist(ctx context.Context, id string) ([]BlockedUser, e
 	if err != nil {
 		return nil, err
 	}
-	list, err := current.client.GetBlocklist(ctx)
+	list, err := current.client.GetBlocklist(ctx, "")
 	if err != nil {
 		return nil, fmt.Errorf("get WhatsApp block list: %w", err)
 	}
-	return mapBlockedUsers(list.JIDs), nil
+	return mapBlockedUsers(list), nil
 }
 
 func (m *Manager) SetContactBlocked(ctx context.Context, id, number string, blocked bool) ([]BlockedUser, error) {
@@ -86,11 +86,11 @@ func (m *Manager) SetContactBlocked(ctx context.Context, id, number string, bloc
 	if blocked {
 		action = events.BlocklistChangeActionBlock
 	}
-	list, err := current.client.UpdateBlocklist(ctx, jid, action)
+	list, err := current.client.UpdateBlocklist(ctx, jid, action, "")
 	if err != nil {
 		return nil, fmt.Errorf("update WhatsApp block list: %w", err)
 	}
-	return mapBlockedUsers(list.JIDs), nil
+	return mapBlockedUsers(list), nil
 }
 
 func (m *Manager) GetUsers(ctx context.Context, id string, numbers []string) ([]UserDetails, error) {
@@ -137,12 +137,27 @@ func (m *Manager) GetUsers(ctx context.Context, id string, numbers []string) ([]
 	return result, nil
 }
 
-func mapBlockedUsers(jids []types.JID) []BlockedUser {
-	result := make([]BlockedUser, 0, len(jids))
-	for _, jid := range jids {
-		jid = jid.ToNonAD()
+func mapBlockedUsers(list *types.Blocklist) []BlockedUser {
+	if list == nil {
+		return []BlockedUser{}
+	}
+	result := make([]BlockedUser, 0, len(list.Items))
+	for _, blocked := range list.Items {
+		if !blocked.Active {
+			continue
+		}
+		jid := blocked.LID.ToNonAD()
+		phoneJID := blocked.PN.ToNonAD()
+		if jid.IsEmpty() {
+			jid = phoneJID
+		}
+		if jid.IsEmpty() {
+			continue
+		}
 		item := BlockedUser{JID: jid.String()}
-		if jid.Server == types.DefaultUserServer {
+		if phoneJID.Server == types.DefaultUserServer {
+			item.Phone = phoneJID.User
+		} else if jid.Server == types.DefaultUserServer {
 			item.Phone = jid.User
 		}
 		result = append(result, item)
