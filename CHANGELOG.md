@@ -5,6 +5,12 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.17.7] - 2026-10-14
+
+- Update whatsmeow from `c386243a72ba` to `f16f9ca30d6a` with WhatsApp protocol definitions v1050189019.
+- Include upstream connection-failure handling that checks whether `RefreshCAT` is configured before calling it.
+- Include upstream support for optional group permission checks and the exported Armadillo application decoder.
+
 ## [0.17.6] - 2026-10-08
 
 - Update whatsmeow from `9399289b022b` to `c386243a72ba` with WhatsApp protocol definitions v1049558099.
@@ -199,7 +205,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.17.6...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.17.7...HEAD
+[0.17.7]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.7
 [0.17.6]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.6
 [0.17.5]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.5
 [0.17.4]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.4
