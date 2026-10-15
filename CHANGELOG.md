@@ -5,6 +5,12 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.17.8] - 2026-10-15
+
+- Update whatsmeow from `f16f9ca30d6a` to `df33a485cc46`.
+- Include the upstream group send permission check fix.
+- Include upstream Messenger device-cache invalidation on direct-message participant hash mismatch and internal Go maintenance updates.
+
 ## [0.17.7] - 2026-10-14
 
 - Update whatsmeow from `c386243a72ba` to `f16f9ca30d6a` with WhatsApp protocol definitions v1050189019.
@@ -205,7 +211,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.17.7...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.17.8...HEAD
+[0.17.8]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.8
 [0.17.7]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.7
 [0.17.6]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.6
 [0.17.5]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.5
