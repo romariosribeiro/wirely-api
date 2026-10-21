@@ -9,6 +9,9 @@
       {"name":"Forward","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"chat\":\"5511999999999\",\"messageId\":\"{{messageId}}\",\"recipient\":\"5511888888888\"}"},"url":"{{baseUrl}}/api/messages/forward"}},
       {"name":"Live location","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"recipient\":\"5511999999999\",\"latitude\":-23.5505,\"longitude\":-46.6333,\"sequence\":1}"},"url":"{{baseUrl}}/api/send/location/live"}}
     ]},
+    {"name":"Chats","item":[
+      {"name":"Delete chat","request":{"method":"POST","description":"Deletes the chat from the connected WhatsApp account. chat is required; deleteMedia is optional and defaults to false. Does not revoke messages for other participants, leave groups, or delete Wirely local history/cache.","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"chat\":\"5511999999999\",\"deleteMedia\":false}"},"url":"{{baseUrl}}/api/chats/delete"}}
+    ]},
     {"name":"Presence and events","item":[
       {"name":"Subscribe presence","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"phone\":\"5511999999999\"}"},"url":"{{baseUrl}}/api/presence/subscribe"}},
       {"name":"SSE stream","request":{"method":"GET","url":"{{baseUrl}}/api/events?events=message.received,presence.updated"}}

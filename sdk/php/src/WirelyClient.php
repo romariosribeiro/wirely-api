@@ -35,6 +35,7 @@ final class WirelyClient
     /** @param array<string, mixed> $payload */
     public function forward(array $payload): array { return $this->request('POST', '/api/messages/forward', $payload); }
     public function setDisappearing(string $chat, string $duration): array { return $this->request('PUT', '/api/chats/disappearing', compact('chat', 'duration')); }
+    public function deleteChat(string $chat, bool $deleteMedia = false): array { return $this->request('POST', '/api/chats/delete', compact('chat', 'deleteMedia')); }
     public function setPresence(string $presence): array { return $this->request('POST', '/api/presence', compact('presence')); }
     public function subscribePresence(string $phone): array { return $this->request('POST', '/api/presence/subscribe', compact('phone')); }
     public function getPresence(string $phone): array { return $this->request('GET', '/api/presence/' . rawurlencode($phone)); }

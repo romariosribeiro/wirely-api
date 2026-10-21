@@ -35,7 +35,7 @@ func TestOpenAPISpec(t *testing.T) {
 		}
 		for _, endpoint := range []string{"/api/send/text", "/api/send/media", "/api/send/location", "/api/send/contact", "/api/send/poll", "/api/send/reaction", "/api/messages/{messageID}/media",
 			"/api/send/location/live", "/api/messages/forward", "/api/chats/disappearing", "/api/presence", "/api/presence/subscribe", "/api/presence/{phone}", "/api/events", "/api/status/text", "/api/status/media",
-			"/api/messages/delete", "/api/messages/edit", "/api/messages/read", "/api/messages/{messageID}/status", "/api/chats/archive", "/api/chats/mute", "/api/chats/pin", "/api/chats/unpin",
+			"/api/messages/delete", "/api/messages/edit", "/api/messages/read", "/api/messages/{messageID}/status", "/api/chats/delete", "/api/chats/archive", "/api/chats/mute", "/api/chats/pin", "/api/chats/unpin",
 			"/api/newsletters", "/api/newsletters/info", "/api/newsletters/invite", "/api/newsletters/messages", "/api/newsletters/subscribe",
 			"/api/labels/chat", "/api/labels/message", "/api/labels/{labelID}", "/api/communities", "/api/communities/groups",
 			"/api/instance", "/api/instance/connect", "/api/instance/disconnect", "/api/instance/logout", "/api/instance/pair", "/api/instance/proxy", "/api/instance/qr", "/api/instance/status", "/api/contacts/check",
@@ -79,7 +79,7 @@ func TestOpenAPISpec(t *testing.T) {
 			schemas["PairInstanceRequest"] == nil || schemas["PairInstanceResponse"] == nil || schemas["ContactCheckRequest"] == nil || schemas["ContactCheck"] == nil ||
 			schemas["UserNumberRequest"] == nil || schemas["UserAvatarRequest"] == nil || schemas["UserInfoRequest"] == nil || schemas["UserAvatar"] == nil || schemas["Blocklist"] == nil || schemas["WhatsAppUser"] == nil ||
 			schemas["ConnectInstanceRequest"] == nil || schemas["ConnectInstanceResponse"] == nil ||
-			schemas["DeleteMessageRequest"] == nil || schemas["EditMessageRequest"] == nil || schemas["MarkMessagesReadRequest"] == nil || schemas["MessageStatus"] == nil || schemas["ChatActionResult"] == nil {
+			schemas["DeleteChatRequest"] == nil || schemas["DeleteMessageRequest"] == nil || schemas["EditMessageRequest"] == nil || schemas["MarkMessagesReadRequest"] == nil || schemas["MessageStatus"] == nil || schemas["ChatActionResult"] == nil {
 			t.Fatal("missing queue or team schemas")
 		}
 	}

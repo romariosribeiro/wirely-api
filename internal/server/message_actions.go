@@ -115,6 +115,19 @@ func (s *Server) publicGetMessageStatus(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, status)
 }
 
+func (s *Server) publicDeleteChat(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		Chat        string `json:"chat"`
+		DeleteMedia bool   `json:"deleteMedia,omitempty"`
+	}
+	s.handleChatAction(w, r, &payload, func(instanceID string) (engine.ChatActionResult, error) {
+		if strings.TrimSpace(payload.Chat) == "" {
+			return engine.ChatActionResult{}, errors.New("chat is required")
+		}
+		return s.messageActions.DeleteChat(r.Context(), instanceID, payload.Chat, payload.DeleteMedia)
+	})
+}
+
 func (s *Server) publicArchiveChat(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Chat     string `json:"chat"`

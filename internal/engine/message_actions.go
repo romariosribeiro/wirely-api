@@ -89,6 +89,17 @@ func (m *Manager) MarkMessagesRead(ctx context.Context, id, chat string, message
 	return MessageActionResult{MessageID: messageIDs[0], Chat: jid.String(), Status: "read"}, nil
 }
 
+func (m *Manager) DeleteChat(ctx context.Context, id, chat string, deleteMedia bool) (ChatActionResult, error) {
+	current, jid, err := m.chatActionSession(id, chat)
+	if err != nil {
+		return ChatActionResult{}, err
+	}
+	if err := current.client.SendAppState(ctx, appstate.BuildDeleteChat(jid, time.Now(), nil, deleteMedia)); err != nil {
+		return ChatActionResult{}, fmt.Errorf("delete WhatsApp chat: %w", err)
+	}
+	return ChatActionResult{Chat: jid.String(), Action: "delete", Status: "deleted"}, nil
+}
+
 func (m *Manager) ArchiveChat(ctx context.Context, id, chat string, archived bool) (ChatActionResult, error) {
 	current, jid, err := m.chatActionSession(id, chat)
 	if err != nil {

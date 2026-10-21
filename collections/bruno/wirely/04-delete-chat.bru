@@ -1,0 +1,29 @@
+meta {
+  name: Delete chat
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/chats/delete
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "chat": "5511999999999",
+    "deleteMedia": false
+  }
+}
+
+docs {
+  chat is required. deleteMedia is optional and defaults to false.
+  Deletes the chat on the connected WhatsApp account, without revoking
+  messages for other participants or leaving groups.
+  Wirely's local history and media cache are preserved.
+}

@@ -5,6 +5,12 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-10-20
+
+- Add Bearer-authenticated `POST /api/chats/delete` to delete a chat on the connected WhatsApp account, with optional `deleteMedia` defaulting to false.
+- Preserve Wirely's local inbox history, activity records, backups, and media cache; deleting a chat does not revoke messages for other participants or leave groups.
+- Document the endpoint and its required/optional fields in OpenAPI, the PT/EN panel, README, PHP SDK, Postman, and Bruno.
+
 ## [0.17.8] - 2026-10-15
 
 - Update whatsmeow from `f16f9ca30d6a` to `df33a485cc46`.
@@ -211,7 +217,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.17.8...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.0
 [0.17.8]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.8
 [0.17.7]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.7
 [0.17.6]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.6

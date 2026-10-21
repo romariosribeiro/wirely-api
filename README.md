@@ -220,6 +220,7 @@ Message and chat actions use the same instance Bearer token:
 | Forward | `POST /api/messages/forward` | Source `chat`, `messageId`, and destination `recipient` |
 | Mark as read | `POST /api/messages/read` | `chat`, `messageIds`, and optional group `participant` |
 | Message status | `GET /api/messages/{messageID}/status` | No body |
+| Delete chat | `POST /api/chats/delete` | Required `chat`; optional `deleteMedia` (default `false`) |
 | Archive or unarchive | `POST /api/chats/archive` | `chat` and optional `archived` |
 | Mute | `POST /api/chats/mute` | `chat` and optional `durationSeconds`; zero means indefinitely |
 | Pin | `POST /api/chats/pin` | `chat` |
@@ -229,6 +230,21 @@ Message and chat actions use the same instance Bearer token:
 `chat` accepts an international phone number without `+` or a WhatsApp chat
 JID. Message status is resolved from the latest persisted WhatsApp receipt and
 is isolated to the instance authenticated by the Bearer token.
+
+To delete a chat from the connected WhatsApp account:
+
+```bash
+curl -X POST 'http://localhost:8080/api/chats/delete' \
+  -H 'Authorization: Bearer wly_SEU_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"chat":"5511999999999","deleteMedia":false}'
+```
+
+The response contains the normalized chat JID, `action: "delete"`, and
+`status: "deleted"`. The operation covers messages up to the request time;
+it does not revoke messages for other participants or leave groups.
+`deleteMedia` requests media deletion on WhatsApp. Wirely's local inbox history,
+activity records, backups, and media cache are preserved.
 
 ## Newsletters, labels, and communities
 

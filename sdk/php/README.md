@@ -13,5 +13,10 @@ $sent = $wirely->sendText('5511999999999', 'Olá pelo SDK', [
 ]);
 ```
 
+Delete a chat on the connected WhatsApp account with
+`$wirely->deleteChat('5511999999999')`. Pass `true` as the second argument to
+request media deletion on WhatsApp. This does not revoke messages for other
+participants, leave groups, or erase Wirely's local history/cache.
+
 `request()` remains public so every documented endpoint can be used immediately,
 even before a convenience method is added.

@@ -9,7 +9,7 @@ type Endpoint = JSONEndpoint | MediaEndpoint
 type GroupEndpoint = 'list' | 'create' | 'join' | 'details' | 'rename' | 'participants' | 'invite' | 'rotate-invite'
 type ProfileEndpoint = 'user-avatar' | 'block-contact' | 'blocklist' | 'check-user' | 'user-contacts' | 'user-info' | 'unblock-contact' | 'get-profile' | 'update-profile' | 'set-photo' | 'delete-photo' | 'get-privacy' | 'update-privacy'
 type InstanceEndpoint = 'login' | 'all' | 'create' | 'settings' | 'delete' | 'details' | 'connect' | 'disconnect' | 'logout' | 'pair' | 'proxy-set' | 'proxy-delete' | 'qr' | 'status' | 'check'
-type MessageActionEndpoint = 'delete-message' | 'edit-message' | 'forward-message' | 'mark-read' | 'message-status' | 'archive-chat' | 'mute-chat' | 'pin-chat' | 'unpin-chat' | 'disappearing' | 'set-presence' | 'subscribe-presence' | 'get-presence'
+type MessageActionEndpoint = 'delete-message' | 'edit-message' | 'forward-message' | 'mark-read' | 'message-status' | 'delete-chat' | 'archive-chat' | 'mute-chat' | 'pin-chat' | 'unpin-chat' | 'disappearing' | 'set-presence' | 'subscribe-presence' | 'get-presence'
 type OrganizationEndpoint = 'create-newsletter' | 'get-newsletter' | 'invite-newsletter' | 'list-newsletters' | 'newsletter-messages' | 'subscribe-newsletter' | 'add-chat-label' | 'edit-label' | 'add-message-label' | 'remove-chat-label' | 'remove-message-label' | 'add-community-groups' | 'create-community' | 'remove-community-groups'
 type Language = 'curl' | 'laravel' | 'node' | 'python'
 
@@ -59,6 +59,7 @@ const messageActionEndpoints: MessageActionEndpointInfo[] = [
   { id: 'forward-message', method: 'POST', path: '/api/messages/forward', examplePath: '/api/messages/forward', title: 'Encaminhar mensagem', description: 'Encaminha texto ou mídia ainda disponível no histórico/cache local.', json: '{"chat":"5511999999999","messageId":"3EB0ABC123","recipient":"5511888888888"}', php: "'chat' => '5511999999999',\n        'messageId' => '3EB0ABC123',\n        'recipient' => '5511888888888',", python: "'chat': '5511999999999',\n        'messageId': '3EB0ABC123',\n        'recipient': '5511888888888'," },
   { id: 'mark-read', method: 'POST', path: '/api/messages/read', examplePath: '/api/messages/read', title: 'Marcar como lida', description: 'Envia confirmação de leitura para até 100 IDs do mesmo remetente. Em grupos, informe participant.', json: '{"chat":"5511999999999","messageIds":["3EB0ABC123"]}', php: "'chat' => '5511999999999',\n        'messageIds' => ['3EB0ABC123'],", python: "'chat': '5511999999999',\n        'messageIds': ['3EB0ABC123']," },
   { id: 'message-status', method: 'GET', path: '/api/messages/{messageID}/status', examplePath: '/api/messages/3EB0ABC123/status', title: 'Status da mensagem', description: 'Retorna o último recibo persistido: sent, delivered, read ou played.' },
+  { id: 'delete-chat', method: 'POST', path: '/api/chats/delete', examplePath: '/api/chats/delete', title: 'Excluir conversa', description: 'Exclui a conversa no WhatsApp da instância, sem revogar mensagens para outros participantes ou sair de grupos. O histórico/cache local do Wirely é preservado. deleteMedia é opcional e o padrão é false.', json: '{"chat":"5511999999999","deleteMedia":false}', php: "'chat' => '5511999999999',\n        'deleteMedia' => false,", python: "'chat': '5511999999999',\n        'deleteMedia': False," },
   { id: 'archive-chat', method: 'POST', path: '/api/chats/archive', examplePath: '/api/chats/archive', title: 'Arquivar conversa', description: 'Arquiva a conversa. Envie archived=false para desarquivar.', json: '{"chat":"5511999999999","archived":true}', php: "'chat' => '5511999999999',\n        'archived' => true,", python: "'chat': '5511999999999',\n        'archived': True," },
   { id: 'mute-chat', method: 'POST', path: '/api/chats/mute', examplePath: '/api/chats/mute', title: 'Silenciar conversa', description: 'Silencia pelo período em segundos; zero mantém silenciada sem prazo.', json: '{"chat":"5511999999999","durationSeconds":28800}', php: "'chat' => '5511999999999',\n        'durationSeconds' => 28800,", python: "'chat': '5511999999999',\n        'durationSeconds': 28800," },
   { id: 'pin-chat', method: 'POST', path: '/api/chats/pin', examplePath: '/api/chats/pin', title: 'Fixar conversa', description: 'Fixa a conversa na lista do WhatsApp.', json: '{"chat":"5511999999999"}', php: "'chat' => '5511999999999',", python: "'chat': '5511999999999'," },
@@ -1015,7 +1016,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
       onCancel={(event) => { event.preventDefault(); onClose() }}>
       <header className="manageHeader">
         <div><p className="eyebrow">REFERÊNCIA DA API</p><h2 id="docs-title">Documentação</h2>
-          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.17.8</span></div>
+          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.18.0</span></div>
         <button className="closeButton" type="button" aria-label="Fechar documentação" onClick={onClose}>×</button>
       </header>
       <div className="docsBody">
