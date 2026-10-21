@@ -5,6 +5,12 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.18.2] - 2026-10-21
+
+- Update whatsmeow from `df33a485cc46` to `b2b1e71d45e2` and align its required Go dependencies.
+- Include upstream fixes for newsletter live updates and newsletter message forward counts.
+- Update WhatsApp protocol definitions to v1050728964 and include the upstream stanza decoder compatibility fix.
+
 ## [0.18.1] - 2026-10-20
 
 - Include optional `data.phone` in newly processed incoming WhatsApp message events when the sender's international phone number is known.
@@ -224,7 +230,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.1...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.2...HEAD
+[0.18.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.2
 [0.18.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.1
 [0.18.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.0
 [0.17.8]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.8
