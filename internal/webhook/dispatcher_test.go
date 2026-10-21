@@ -77,7 +77,7 @@ func TestDispatcherPersistsSignsRetriesAndDeduplicates(t *testing.T) {
 	}
 	defer dispatcher.Close()
 	event := engine.Event{ID: "evt_test", Event: "message.received", InstanceID: instance.ID,
-		Timestamp: "2026-09-16T20:00:00Z", Data: map[string]any{"text": "hello"}}
+		Timestamp: "2026-09-16T20:00:00Z", Data: map[string]any{"text": "hello", "from": "123456789012345@lid", "phone": "5511999999999"}}
 	dispatcher.Dispatch(event)
 	waitFor(t, func() bool {
 		job, err := store.GetWebhookJob(context.Background(), instance.ID, event.ID)
@@ -98,6 +98,9 @@ func TestDispatcherPersistsSignsRetriesAndDeduplicates(t *testing.T) {
 	var delivered engine.Event
 	if err := json.Unmarshal(body, &delivered); err != nil || delivered.InstanceID != instance.ID {
 		t.Fatalf("unexpected payload: %#v %v", delivered, err)
+	}
+	if delivered.Data["phone"] != "5511999999999" || delivered.Data["from"] != "123456789012345@lid" {
+		t.Fatalf("webhook retry lost sender identity: %#v", delivered.Data)
 	}
 
 	dispatcher.Dispatch(event)

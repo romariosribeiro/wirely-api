@@ -36,6 +36,9 @@ func TestIncomingMessageEvent(t *testing.T) {
 	if event.Data["from"] != "5511888888888@s.whatsapp.net" || event.Data["chat"] != "5511999999999@s.whatsapp.net" {
 		t.Fatalf("unexpected JIDs: %#v", event.Data)
 	}
+	if event.Data["phone"] != "5511888888888" {
+		t.Fatalf("missing sender phone: %#v", event.Data)
+	}
 }
 
 func TestMessageTextUsesMediaCaption(t *testing.T) {

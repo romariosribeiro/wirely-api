@@ -89,6 +89,12 @@ func incomingMessageEvent(instanceID string, message *events.Message) Event {
 		"type":     messageType,
 		"text":     messageText(message),
 	}
+	for _, sender := range []types.JID{message.Info.Sender, message.Info.SenderAlt} {
+		if phone := senderPhoneFromJID(sender); phone != "" {
+			data["phone"] = phone
+			break
+		}
+	}
 	if reaction := message.Message.GetReactionMessage(); reaction != nil {
 		data["reaction"] = reaction.GetText()
 		data["targetId"] = reaction.GetKey().GetID()
@@ -100,6 +106,18 @@ func incomingMessageEvent(instanceID string, message *events.Message) Event {
 		}
 	}
 	return newEvent(eventName, instanceID, message.Info.Timestamp, data)
+}
+
+func senderPhoneFromJID(jid types.JID) string {
+	if jid.Server != types.DefaultUserServer || len(jid.User) < 8 || len(jid.User) > 15 || jid.User[0] == '0' {
+		return ""
+	}
+	for _, digit := range jid.User {
+		if digit < '0' || digit > '9' {
+			return ""
+		}
+	}
+	return jid.User
 }
 
 func messageText(event *events.Message) string {

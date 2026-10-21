@@ -602,6 +602,8 @@
   "Exclui a conversa no WhatsApp da instância, sem revogar mensagens para outros participantes ou sair de grupos. O histórico/cache local do Wirely é preservado. deleteMedia é opcional e o padrão é false.": "Deletes the chat on the instance's WhatsApp account without revoking messages for other participants or leaving groups. Wirely's local history/cache is preserved. deleteMedia is optional and defaults to false.",
   "Telefone internacional sem + ou JID completo da conversa, incluindo @s.whatsapp.net, @lid ou @g.us.": "International phone number without + or full chat JID, including @s.whatsapp.net, @lid or @g.us.",
   "Opcional. Solicita ao WhatsApp excluir também as mídias da conversa. Não remove arquivos do cache local do Wirely.": "Optional. Asks WhatsApp to also delete chat media. Does not remove files from Wirely's local cache.",
+  "Telefone do remetente": "Sender phone number",
+  "data.phone é opcional e contém o telefone internacional sem + quando identificado pelo motor. Em grupos, pertence ao autor da mensagem. Se não estiver disponível, o campo é omitido; um LID não é um telefone. from e chat mantêm seus JIDs originais.": "data.phone is optional and contains the international phone number without + when identified by the engine. In groups, it belongs to the message author. If unavailable, the field is omitted; a LID is not a phone number. from and chat retain their original JIDs.",
   "Arquivar conversa": "Archive chat",
   "Silenciar conversa": "Mute chat",
   "Fixar conversa": "Pin chat",

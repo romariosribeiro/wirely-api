@@ -17,6 +17,7 @@ import (
 
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
+	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 )
 
@@ -56,6 +57,17 @@ type incomingMedia struct {
 
 func (m *Manager) prepareIncomingMessage(current *session, message *events.Message) Event {
 	event := incomingMessageEvent(current.id, message)
+	if _, known := event.Data["phone"]; !known && message.Info.Sender.Server == types.HiddenUserServer &&
+		current.client != nil && current.client.Store != nil && current.client.Store.LIDs != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		jid, err := current.client.Store.LIDs.GetPNForLID(ctx, message.Info.Sender.ToNonAD())
+		cancel()
+		if err == nil {
+			if phone := senderPhoneFromJID(jid); phone != "" {
+				event.Data["phone"] = phone
+			}
+		}
+	}
 	addStructuredMessageMetadata(event.Data, message.Message)
 	media, ok := incomingMediaFromMessage(message.Message)
 	if !ok {

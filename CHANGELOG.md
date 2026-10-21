@@ -5,6 +5,13 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-10-20
+
+- Include optional `data.phone` in newly processed incoming WhatsApp message events when the sender's international phone number is known.
+- Resolve sender phone numbers from phone JIDs, alternate sender addresses, or the engine's local LID mapping, preserving `from` and `chat`.
+- Omit unknown phone numbers instead of exposing LIDs as phones; keep webhook delivery working when mapping lookups fail.
+- Document the field in OpenAPI, README, and the PT/EN panel; webhook, SSE, and stored event data share the enriched payload.
+
 ## [0.18.0] - 2026-10-20
 
 - Add Bearer-authenticated `POST /api/chats/delete` to delete a chat on the connected WhatsApp account, with optional `deleteMedia` defaulting to false.
@@ -217,7 +224,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.0...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.1...HEAD
+[0.18.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.1
 [0.18.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.0
 [0.17.8]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.8
 [0.17.7]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.17.7

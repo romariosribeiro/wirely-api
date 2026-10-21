@@ -791,7 +791,7 @@ ${auth}${payload}`
 const receivedMediaEvent = JSON.stringify({
   id: 'evt_...', event: 'message.received', instanceId: 'instance-id', timestamp: '2026-09-17T12:00:00Z',
   data: {
-    id: '3EB0ABC', from: '5511999999999@s.whatsapp.net', chat: '5511999999999@s.whatsapp.net',
+    id: '3EB0ABC', from: '5511999999999@s.whatsapp.net', phone: '5511999999999', chat: '5511999999999@s.whatsapp.net',
     fromMe: false, isGroup: false, type: 'image', text: 'Comprovante',
     media: {
       available: true, type: 'image', mimetype: 'image/jpeg', fileName: 'media-3EB0ABC.jpg',
@@ -1016,7 +1016,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
       onCancel={(event) => { event.preventDefault(); onClose() }}>
       <header className="manageHeader">
         <div><p className="eyebrow">REFERÊNCIA DA API</p><h2 id="docs-title">Documentação</h2>
-          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.18.0</span></div>
+          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.18.1</span></div>
         <button className="closeButton" type="button" aria-label="Fechar documentação" onClick={onClose}>×</button>
       </header>
       <div className="docsBody">
@@ -1169,6 +1169,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
             <article><strong>Resposta Base64</strong><span>Adicione <code>?format=base64</code> para receber JSON.</span></article>
           </div>
           <div className="docsEndpointNote"><strong>Evento message.received</strong><span>Quando <code>media.available</code> for verdadeiro, use <code>media.downloadUrl</code> com o Bearer Token da mesma instância.</span></div>
+          <div className="docsEndpointNote"><strong>Telefone do remetente</strong><span>data.phone é opcional e contém o telefone internacional sem + quando identificado pelo motor. Em grupos, pertence ao autor da mensagem. Se não estiver disponível, o campo é omitido; um LID não é um telefone. from e chat mantêm seus JIDs originais.</span></div>
           <EndpointFields path="/api/messages/{messageID}/media" method="GET" />
           <pre className="docsCode docsQueueCode" aria-label="Exemplo de webhook com mídia"><code>{receivedMediaEvent}</code></pre>
           <div className="docsCodeHeader docsGroupCodeHeader"><div className="docsLanguages" role="tablist" aria-label="Linguagem do download de mídia">

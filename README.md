@@ -717,6 +717,7 @@ Each delivery is an HTTP `POST` with a JSON body:
   "data": {
     "id": "3EB0...",
     "from": "5511999999999@s.whatsapp.net",
+    "phone": "5511999999999",
     "chat": "5511999999999@s.whatsapp.net",
     "fromMe": false,
     "isGroup": false,
@@ -726,6 +727,16 @@ Each delivery is an HTTP `POST` with a JSON body:
   }
 }
 ```
+
+For newly processed incoming messages, `data.phone` contains the sender's
+international phone number, using digits only and no `+`, when it is known.
+Wirely uses the sender's phone JID, the alternative sender address supplied by
+WhatsApp, or the engine's local LID-to-phone mapping. If the number is unknown,
+the field is omitted: an `@lid` identifier is never treated as a phone number.
+In groups, `phone` identifies the message author, not the group. Existing
+`from` and `chat` fields keep their original JIDs. SSE and stored event data
+receive the same optional field; previously stored events are not enriched
+retroactively.
 
 Media events include a `media` object. `available=true` means the attachment
 can be downloaded with the same instance Bearer token:
@@ -739,6 +750,7 @@ can be downloaded with the same instance Bearer token:
   "data": {
     "id": "3EB0ABC",
     "from": "5511999999999@s.whatsapp.net",
+    "phone": "5511999999999",
     "chat": "5511999999999@s.whatsapp.net",
     "fromMe": false,
     "isGroup": false,
