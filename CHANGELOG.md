@@ -5,6 +5,14 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.18.3] - 2026-10-28
+
+- Update whatsmeow from `b2b1e71d45e2` to `d24d079a3755`, including connection-handshake and bot-recipient fixes and the optional unified-session capability.
+- Include the engine's new streaming sidecar in outgoing videos, including video Status posts.
+- Return HTTP 422 with `code: recipient_not_on_whatsapp`, `retryable: false`, and an actionable message when WhatsApp reports an unregistered recipient; preserve the existing `error` string contract.
+- Stop automatic queue retries for confirmed unregistered recipients; keep transient query failures and Brazilian ninth-digit fallback working.
+- Document recipient errors in OpenAPI, README, and the PT/EN panel and cover error classification, sending, and queue behavior with regression tests.
+
 ## [0.18.2] - 2026-10-21
 
 - Update whatsmeow from `df33a485cc46` to `b2b1e71d45e2` and align its required Go dependencies.
@@ -230,7 +238,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.2...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.3...HEAD
+[0.18.3]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.3
 [0.18.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.2
 [0.18.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.1
 [0.18.0]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.0

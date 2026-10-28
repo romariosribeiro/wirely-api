@@ -1,11 +1,8 @@
 package server
 
 import (
-	"errors"
 	"net/http"
 	"strings"
-
-	"github.com/romariosribeiro/wirely-api/internal/engine"
 )
 
 func (s *Server) listContacts(w http.ResponseWriter, r *http.Request) {
@@ -133,12 +130,7 @@ func (s *Server) sendChatMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result, err := s.chatSender.SendChatText(r.Context(), instanceID, chat, payload.Message)
-	if errors.Is(err, engine.ErrNotConnected) {
-		writeError(w, http.StatusConflict, err.Error())
-		return
-	}
-	if err != nil {
-		writeError(w, http.StatusUnprocessableEntity, err.Error())
+	if writeSendError(w, err) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, result)

@@ -270,6 +270,26 @@ and `forwarded`. Text also accepts `linkPreview`; image and video media accept
 `viewOnce`. For multipart media, send the shared advanced fields as JSON in
 `messageOptions`.
 
+### Sending to numbers without WhatsApp
+
+When WhatsApp reports that a recipient is not registered, synchronous sends
+and forwarding return **HTTP 422** with an additive, machine-readable code:
+
+```json
+{
+  "error": "recipient is not on WhatsApp; check the phone number and country code before sending again",
+  "code": "recipient_not_on_whatsapp",
+  "retryable": false
+}
+```
+
+Check the international phone number and country code before sending again.
+The existing `error` string is preserved for client compatibility. Temporary
+lookup failures are not classified as an unregistered number, and Brazilian
+numbers still support the ninth-digit fallback. Queued messages fail on the
+first confirmed unregistered-recipient error, with a clear `lastError` and no
+automatic retries; manual retry remains available after correcting the cause.
+
 ## Presence and real-time events
 
 - `POST /api/presence` sets the instance to `available` or `unavailable`.

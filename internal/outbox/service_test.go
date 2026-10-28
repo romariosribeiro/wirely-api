@@ -3,6 +3,7 @@ package outbox
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"sync"
 	"testing"
@@ -11,6 +12,60 @@ import (
 	"github.com/romariosribeiro/wirely-api/internal/engine"
 	"github.com/romariosribeiro/wirely-api/internal/storage"
 )
+
+func TestUnregisteredRecipientFailsWithoutAutomaticRetry(t *testing.T) {
+	for _, kind := range []string{"text", "image"} {
+		t.Run(kind, func(t *testing.T) {
+			sender := &fakeSender{err: fmt.Errorf("send: %w", engine.ErrRecipientNotOnWhatsApp)}
+			store, service, instance := queueFixture(t, sender)
+			var job storage.MessageJob
+			var err error
+			if kind == "text" {
+				job, _, err = service.EnqueueText(context.Background(), instance.ID, "5511999999999", "Hello", time.Time{}, "")
+			} else {
+				job, _, err = service.EnqueueMedia(context.Background(), instance.ID, "5511999999999", engine.MediaPayload{Kind: engine.MediaImage, Data: []byte("image"), MIMEType: "image/png"}, time.Time{}, "")
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			claimed, err := store.ClaimNextMessageJob(context.Background(), time.Now().UTC().Add(time.Second))
+			if err != nil {
+				t.Fatal(err)
+			}
+			service.deliver(claimed)
+			failed, err := store.GetMessageJob(context.Background(), instance.ID, job.ID)
+			if err != nil || failed.Status != "failed" || failed.Attempt != 1 || failed.MaxAttempts <= 1 || failed.LastError != engine.RecipientNotOnWhatsAppMessage {
+				t.Fatalf("unregistered recipient retried or unclear error: %#v error=%v", failed, err)
+			}
+			if _, err := store.ClaimNextMessageJob(context.Background(), time.Now().UTC().Add(time.Hour)); !errors.Is(err, storage.ErrJobNotFound) {
+				t.Fatalf("terminal job was claimable: %v", err)
+			}
+			retried, err := service.Retry(context.Background(), instance.ID, job.ID)
+			if err != nil || retried.Status != "queued" {
+				t.Fatalf("manual retry: %#v %v", retried, err)
+			}
+		})
+	}
+}
+
+func TestRetryableSendErrors(t *testing.T) {
+	for _, test := range []struct {
+		err  error
+		want bool
+	}{
+		{nil, false},
+		{engine.ErrRecipientNotOnWhatsApp, false},
+		{fmt.Errorf("send: %w", engine.ErrRecipientNotOnWhatsApp), false},
+		{os.ErrNotExist, false},
+		{context.DeadlineExceeded, true},
+		{engine.ErrNotConnected, true},
+		{errors.New("temporary lookup failure"), true},
+	} {
+		if got := retryable(test.err); got != test.want {
+			t.Fatalf("retryable(%v)=%v; want %v", test.err, got, test.want)
+		}
+	}
+}
 
 type fakeSender struct {
 	mu         sync.Mutex

@@ -236,7 +236,7 @@ export type AuditEntry = {
   createdAt: string
 }
 
-type ApiError = { error?: string }
+type ApiError = { error?: string; code?: string; retryable?: boolean }
 
 export async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const headers = new Headers(options?.headers)
@@ -250,6 +250,9 @@ export async function request<T>(url: string, options?: RequestInit): Promise<T>
   if (!response.ok) {
     if (response.status === 401 && url !== '/api/auth/login') window.dispatchEvent(new Event('wirely:unauthorized'))
     const body = (await response.json().catch(() => ({}))) as ApiError
+    if (body.code === 'recipient_not_on_whatsapp') {
+      throw new Error('Este número não possui WhatsApp. Confira o número e o DDI antes de enviar novamente.')
+    }
     throw new Error(body.error ?? 'Não foi possível concluir a operação')
   }
   if (response.status === 204) return undefined as T

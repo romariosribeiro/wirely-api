@@ -776,5 +776,9 @@
   "0 = ilimitadas": "0 = unlimited",
   "Salvar configurações": "Save settings",
   "Configurações de reconexão salvas.": "Reconnection settings saved.",
-  "Ative a reconexão automática ou salve o endereço novamente para voltar ao proxy.": "Enable automatic reconnection or save the address again to return to the proxy."
+  "Ative a reconexão automática ou salve o endereço novamente para voltar ao proxy.": "Enable automatic reconnection or save the address again to return to the proxy.",
+  "Este número não possui WhatsApp. Confira o número e o DDI antes de enviar novamente.": "This number is not on WhatsApp. Check the phone number and country code before sending again.",
+  "Quando o WhatsApp confirma que o destinatário não possui conta, a API retorna": "When WhatsApp confirms that the recipient has no account, the API returns",
+  "e": "and",
+  ". Confira o número e o DDI antes de tentar novamente. Na fila, o envio fica como falha sem novas tentativas automáticas.": ". Check the phone number and country code before trying again. Queued messages are marked as failed without automatic retries."
 }

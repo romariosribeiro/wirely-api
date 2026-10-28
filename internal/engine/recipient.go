@@ -4,13 +4,16 @@ import (
 	"context"
 	"strings"
 
-	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/types"
 )
 
+type recipientLookup interface {
+	IsOnWhatsApp(context.Context, []string) ([]types.IsOnWhatsAppResponse, error)
+}
+
 // resolveMessageRecipient asks WhatsApp for the canonical JID when a Brazilian
 // phone number may be registered with or without the ninth mobile digit.
-func resolveMessageRecipient(ctx context.Context, client *whatsmeow.Client, value string) (types.JID, string, error) {
+func resolveMessageRecipient(ctx context.Context, client recipientLookup, value string) (types.JID, string, error) {
 	jid, display, err := parseMessageRecipient(value)
 	if err != nil {
 		return types.EmptyJID, "", err
@@ -32,7 +35,30 @@ func resolveMessageRecipient(ctx context.Context, client *whatsmeow.Client, valu
 	if canonical, ok := selectCanonicalRecipient(variants, response); ok {
 		return canonical, display, nil
 	}
+	// Only reject a lookup when WhatsApp explicitly rejected every variant.
+	// Partial responses or query failures must not be mistaken for an absent account.
+	if allRecipientsUnregistered(variants, response) {
+		return types.EmptyJID, "", ErrRecipientNotOnWhatsApp
+	}
 	return jid, display, nil
+}
+
+func allRecipientsUnregistered(variants []string, response []types.IsOnWhatsAppResponse) bool {
+	for _, variant := range variants {
+		confirmed := false
+		for _, item := range response {
+			if item.Query == variant {
+				if item.IsIn {
+					return false
+				}
+				confirmed = true
+			}
+		}
+		if !confirmed {
+			return false
+		}
+	}
+	return len(variants) > 0
 }
 
 func brazilianPhoneVariants(phone string) []string {

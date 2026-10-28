@@ -321,6 +321,9 @@ func (s *Service) deliver(job storage.MessageJob) {
 		return
 	}
 	terminal := job.Attempt >= job.MaxAttempts || !retryable(err)
+	if errors.Is(err, engine.ErrRecipientNotOnWhatsApp) {
+		err = errors.New(engine.RecipientNotOnWhatsAppMessage)
+	}
 	nextAttempt := time.Now().UTC().Add(retryDelay(job.Attempt))
 	if failErr := s.store.FailMessageJob(context.Background(), job.ID, err.Error(), nextAttempt, terminal); failErr != nil {
 		slog.Error("message queue failure update failed", "job_id", job.ID, "error", failErr)
@@ -328,7 +331,7 @@ func (s *Service) deliver(job storage.MessageJob) {
 }
 
 func retryable(err error) bool {
-	return err != nil && !errors.Is(err, os.ErrNotExist)
+	return err != nil && !errors.Is(err, os.ErrNotExist) && !errors.Is(err, engine.ErrRecipientNotOnWhatsApp)
 }
 
 func retryDelay(attempt int) time.Duration {

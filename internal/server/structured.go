@@ -125,12 +125,7 @@ func (s *Server) sendStructuredJSON(w http.ResponseWriter, r *http.Request, payl
 	}
 	defer stopPresence()
 	result, err := send(instanceID)
-	if errors.Is(err, engine.ErrNotConnected) {
-		writeError(w, http.StatusConflict, err.Error())
-		return
-	}
-	if err != nil {
-		writeError(w, http.StatusUnprocessableEntity, err.Error())
+	if writeSendError(w, err) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, result)

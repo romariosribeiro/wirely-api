@@ -23,7 +23,7 @@ func buildExtendedOpenAPI() []byte {
 	if json.Unmarshal([]byte(openAPISpec), &spec) != nil {
 		return []byte(openAPISpec)
 	}
-	spec["info"].(map[string]any)["version"] = "0.18.2"
+	spec["info"].(map[string]any)["version"] = "0.18.3"
 	paths := spec["paths"].(map[string]any)
 	spec["tags"] = append(spec["tags"].([]any), map[string]any{"name": "Status"}, map[string]any{"name": "Alertas"})
 	schemas := spec["components"].(map[string]any)["schemas"].(map[string]any)
@@ -86,12 +86,32 @@ func buildExtendedOpenAPI() []byte {
 	mediaProps := media["content"].(map[string]any)["multipart/form-data"].(map[string]any)["schema"].(map[string]any)["properties"].(map[string]any)
 	mediaProps["messageOptions"] = map[string]any{"type": "string", "description": "JSON com replyTo, mentions e forwarded"}
 	mediaProps["viewOnce"] = map[string]any{"type": "boolean", "description": "Somente imagem ou vídeo"}
+	addSendErrorDocumentation(paths, schemas)
 
 	data, err := json.MarshalIndent(spec, "", "  ")
 	if err != nil {
 		return []byte(openAPISpec)
 	}
 	return data
+}
+
+func addSendErrorDocumentation(paths, schemas map[string]any) {
+	properties := schemas["Error"].(map[string]any)["properties"].(map[string]any)
+	properties["code"] = map[string]any{"type": "string", "description": "Código opcional para tratamento automático. recipient_not_on_whatsapp indica destinatário sem WhatsApp.", "example": "recipient_not_on_whatsapp"}
+	properties["retryable"] = map[string]any{"type": "boolean", "description": "Quando false, não repita automaticamente o envio sem corrigir o destinatário."}
+	for _, path := range []string{"/api/send/text", "/api/send/media", "/api/send/location", "/api/send/location/live", "/api/send/contact", "/api/send/poll", "/api/send/reaction", "/api/messages/forward", "/api/instances/{id}/chats/{chat}/messages"} {
+		operation := paths[path].(map[string]any)["post"].(map[string]any)
+		operation["responses"].(map[string]any)["422"] = map[string]any{
+			"description": "Conteúdo inválido ou destinatário sem WhatsApp. Consulte code; erros temporários de consulta não são tratados como número inexistente.",
+			"content": map[string]any{"application/json": map[string]any{
+				"schema": map[string]any{"$ref": "#/components/schemas/Error"},
+				"examples": map[string]any{"recipientNotOnWhatsApp": map[string]any{
+					"summary": "Destinatário sem WhatsApp",
+					"value":   map[string]any{"error": "recipient is not on WhatsApp; check the phone number and country code before sending again", "code": "recipient_not_on_whatsapp", "retryable": false},
+				}},
+			}},
+		}
+	}
 }
 
 func addAdvancedMessageProperties(schemas map[string]any, name string, linkPreview bool) {

@@ -7,6 +7,39 @@ import (
 	"testing"
 )
 
+func TestOpenAPISendRecipientErrors(t *testing.T) {
+	var spec map[string]any
+	if err := json.Unmarshal(buildExtendedOpenAPI(), &spec); err != nil {
+		t.Fatal(err)
+	}
+	paths := spec["paths"].(map[string]any)
+	for _, path := range []string{"/api/send/text", "/api/send/media", "/api/send/location", "/api/send/location/live", "/api/send/contact", "/api/send/poll", "/api/send/reaction", "/api/messages/forward", "/api/instances/{id}/chats/{chat}/messages"} {
+		t.Run(path, func(t *testing.T) {
+			operation := paths[path].(map[string]any)["post"].(map[string]any)
+			response := operation["responses"].(map[string]any)["422"].(map[string]any)
+			jsonResponse := response["content"].(map[string]any)["application/json"].(map[string]any)
+			value := jsonResponse["examples"].(map[string]any)["recipientNotOnWhatsApp"].(map[string]any)["value"]
+			encoded, err := json.Marshal(value)
+			if err != nil {
+				t.Fatal(err)
+			}
+			recorder := httptest.NewRecorder()
+			recorder.WriteHeader(http.StatusUnprocessableEntity)
+			_, _ = recorder.Write(encoded)
+			assertRecipientError(t, recorder)
+		})
+	}
+	schema := spec["components"].(map[string]any)["schemas"].(map[string]any)["Error"].(map[string]any)
+	properties := schema["properties"].(map[string]any)
+	if properties["code"].(map[string]any)["type"] != "string" || properties["retryable"].(map[string]any)["type"] != "boolean" {
+		t.Fatal("structured error fields missing")
+	}
+	required := schema["required"].([]any)
+	if len(required) != 1 || required[0] != "error" {
+		t.Fatal("existing error responses must remain valid")
+	}
+}
+
 func TestOpenAPISpec(t *testing.T) {
 	app := New(Dependencies{Store: testStore(t)})
 	for _, path := range []string{"/openapi.json", "/api/openapi.json"} {

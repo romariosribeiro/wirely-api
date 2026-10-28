@@ -171,7 +171,7 @@ func uploadedMessage(media MediaPayload, upload whatsmeow.UploadResponse) *waE2E
 	case MediaImage:
 		return &waE2E.Message{ImageMessage: &waE2E.ImageMessage{URL: proto.String(upload.URL), DirectPath: proto.String(upload.DirectPath), MediaKey: upload.MediaKey, FileEncSHA256: upload.FileEncSHA256, FileSHA256: upload.FileSHA256, FileLength: proto.Uint64(upload.FileLength), Mimetype: proto.String(media.MIMEType), Caption: proto.String(media.Caption)}}
 	case MediaVideo:
-		return &waE2E.Message{VideoMessage: &waE2E.VideoMessage{URL: proto.String(upload.URL), DirectPath: proto.String(upload.DirectPath), MediaKey: upload.MediaKey, FileEncSHA256: upload.FileEncSHA256, FileSHA256: upload.FileSHA256, FileLength: proto.Uint64(upload.FileLength), Mimetype: proto.String(media.MIMEType), Caption: proto.String(media.Caption)}}
+		return &waE2E.Message{VideoMessage: &waE2E.VideoMessage{URL: proto.String(upload.URL), DirectPath: proto.String(upload.DirectPath), MediaKey: upload.MediaKey, FileEncSHA256: upload.FileEncSHA256, FileSHA256: upload.FileSHA256, FileLength: proto.Uint64(upload.FileLength), Mimetype: proto.String(media.MIMEType), Caption: proto.String(media.Caption), StreamingSidecar: upload.StreamingSidecar}}
 	case MediaAudio:
 		return &waE2E.Message{AudioMessage: &waE2E.AudioMessage{URL: proto.String(upload.URL), DirectPath: proto.String(upload.DirectPath), MediaKey: upload.MediaKey, FileEncSHA256: upload.FileEncSHA256, FileSHA256: upload.FileSHA256, FileLength: proto.Uint64(upload.FileLength), Mimetype: proto.String(media.MIMEType), PTT: proto.Bool(media.Voice)}}
 	case MediaSticker:

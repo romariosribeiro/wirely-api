@@ -1016,7 +1016,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
       onCancel={(event) => { event.preventDefault(); onClose() }}>
       <header className="manageHeader">
         <div><p className="eyebrow">REFERÊNCIA DA API</p><h2 id="docs-title">Documentação</h2>
-          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.18.2</span></div>
+          <span className="docsVersion">OpenAPI 3.1 · Wirely 0.18.3</span></div>
         <button className="closeButton" type="button" aria-label="Fechar documentação" onClick={onClose}>×</button>
       </header>
       <div className="docsBody">
@@ -1072,6 +1072,7 @@ export function DocsModal({ instances, canManage, onClose, onManage }: {
           <pre className="docsCode" aria-label={`Exemplo ${languages.find((item) => item.id === language)?.label}`}><code>{code}</code></pre>
           <p className="docsSecurity">O exemplo usa o token da instância selecionada. Não publique nem envie esse código com o token preenchido.</p>
           <p className="docsDelayNote"><strong>options</strong><span>Envia <code>composing</code> (Digitando…) ou <code>recording</code> (Gravando áudio…), aguarda <code>delay</code> de 0 a 60000 ms e finaliza com <code>paused</code>.</span></p>
+          <p className="docsDelayNote"><strong>HTTP 422</strong><span>Quando o WhatsApp confirma que o destinatário não possui conta, a API retorna <code>code: recipient_not_on_whatsapp</code> e <code>retryable: false</code>. Confira o número e o DDI antes de tentar novamente. Na fila, o envio fica como falha sem novas tentativas automáticas.</span></p>
         </section>
 
         <section className="docsSection" aria-labelledby="docs-message-actions-title">

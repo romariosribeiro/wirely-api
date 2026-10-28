@@ -115,9 +115,5 @@ func (s *Server) beginSendOptions(w http.ResponseWriter, r *http.Request, instan
 }
 
 func writeSendOptionsError(w http.ResponseWriter, err error) {
-	if errors.Is(err, engine.ErrNotConnected) {
-		writeError(w, http.StatusConflict, err.Error())
-		return
-	}
-	writeError(w, http.StatusUnprocessableEntity, err.Error())
+	writeSendError(w, err)
 }

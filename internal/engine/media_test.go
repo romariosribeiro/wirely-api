@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
@@ -44,13 +45,13 @@ func TestValidateMedia(t *testing.T) {
 }
 
 func TestUploadedMessageFields(t *testing.T) {
-	upload := whatsmeow.UploadResponse{URL: "url", DirectPath: "path", MediaKey: []byte{1}, FileSHA256: []byte{2}, FileEncSHA256: []byte{3}, FileLength: 42}
+	upload := whatsmeow.UploadResponse{URL: "url", DirectPath: "path", MediaKey: []byte{1}, FileSHA256: []byte{2}, FileEncSHA256: []byte{3}, FileLength: 42, StreamingSidecar: []byte{4, 5, 6}}
 	image := uploadedMessage(MediaPayload{Kind: MediaImage, MIMEType: "image/png", Caption: "caption"}, upload).GetImageMessage()
 	if image.GetURL() != "url" || image.GetCaption() != "caption" || image.GetFileLength() != 42 {
 		t.Fatal("image upload fields were not copied")
 	}
 	video := uploadedMessage(MediaPayload{Kind: MediaVideo, MIMEType: "video/mp4", Caption: "clip"}, upload).GetVideoMessage()
-	if video.GetMimetype() != "video/mp4" || video.GetCaption() != "clip" {
+	if video.GetMimetype() != "video/mp4" || video.GetCaption() != "clip" || !bytes.Equal(video.GetStreamingSidecar(), upload.StreamingSidecar) {
 		t.Fatal("video fields were not copied")
 	}
 	sticker := uploadedMessage(MediaPayload{Kind: MediaSticker, MIMEType: "image/webp"}, upload).GetStickerMessage()
