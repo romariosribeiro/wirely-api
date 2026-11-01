@@ -488,6 +488,24 @@ directory: encryption does not protect tokens if both the database and key are
 compromised. Use HTTPS in production to protect credentials in transit.
 
 
+## Automatic call rejection
+
+Enable `rejectCall` and save the instance settings to request rejection of
+incoming **individual** calls. `msgRejectCall` is optional; when configured,
+Wirely sends it to the call creator after successfully sending the rejection
+signal. Repeated signals for the same call are deduplicated to avoid duplicate
+messages. Group call invitations are reported but are not automatically rejected.
+
+Both `CallOffer` and direct `CallOfferNotice` engine events are handled. Notices
+appear as `call.offer` with `data.source: "offer_notice"` in activity/webhooks.
+Failures to send the rejection or the reply are recorded in the service logs;
+a successful request does not guarantee that every ringing device stopped.
+
+Rejection requires a live incoming signal from WhatsApp. If the engine only
+receives a final accept/reject event, Wirely cannot retroactively reject the
+call. Missing offer events on some LID-mode accounts are tracked in
+[upstream issue #1280](https://github.com/tulir/whatsmeow/issues/1280).
+
 ## Team access and roles
 
 The original `admin` account is migrated automatically to the protected

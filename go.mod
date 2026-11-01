@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	go.mau.fi/whatsmeow v0.0.0-20261028111316-d24d079a3755
+	go.mau.fi/whatsmeow v0.0.0-20261031222104-5d4657a5c29e
 	golang.org/x/net v0.61.0
 	google.golang.org/protobuf v1.36.12
 	modernc.org/sqlite v1.36.0

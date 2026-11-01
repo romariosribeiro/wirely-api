@@ -5,6 +5,14 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.18.4] - 2026-11-01
+
+- Update whatsmeow from `d24d079a3755` to `5d4657a5c29e`, including handshake reconnection, contact deduplication, synchronous app-state acknowledgment, sensitive log redaction, and protocol definitions v1052556849.
+- Add privacy-preserving diagnostics for incoming/outgoing raw call signal tags before engine event parsing.
+- Process direct `CallOfferNotice` signals as well as `CallOffer` for automatic call rejection, and preserve call notices in activity/webhooks.
+- Use the call creator as the rejection/reply recipient, skip outgoing and group calls, and deduplicate repeated signals to prevent repeated replies.
+- Bound call rejection and automatic reply execution and log failures instead of silently discarding them. Live rejection still depends on the engine receiving an incoming call signal.
+
 ## [0.18.3] - 2026-10-28
 
 - Update whatsmeow from `b2b1e71d45e2` to `d24d079a3755`, including connection-handshake and bot-recipient fixes and the optional unified-session capability.
@@ -238,7 +246,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.3...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.4...HEAD
+[0.18.4]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.4
 [0.18.3]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.3
 [0.18.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.2
 [0.18.1]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.1

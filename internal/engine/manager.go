@@ -85,6 +85,7 @@ type session struct {
 	reconnectAllowed bool
 	needsFreshDevice bool
 	retired          bool
+	rejectedCalls    map[string]time.Time
 }
 
 func NewManager(dataDirectory string, store *storage.Store) (*Manager, error) {
@@ -562,7 +563,7 @@ func (m *Manager) ensure(ctx context.Context, id string) (*session, error) {
 
 	sessionContext, cancel := context.WithCancel(context.Background())
 	current := &session{
-		id: id, client: whatsmeow.NewClient(device, nil), container: container,
+		id: id, client: whatsmeow.NewClient(device, callDiagnosticsLogger{instanceID: id}), container: container,
 		cancel: cancel, status: "disconnected", settings: instance.InstanceSettings,
 	}
 	proxySettings, err := m.store.GetInstanceProxySettings(ctx, id)
@@ -713,22 +714,27 @@ func (m *Manager) handleEvent(current *session, event any) {
 		m.emit(newEvent("history.sync", current.id, time.Now().UTC(), data))
 	case *events.CallOffer:
 		m.emit(callEvent(current.id, "call.offer", value.BasicCallMeta, value.RemotePlatform, value.RemoteVersion, ""))
+		m.rejectIncomingCall(current, value.BasicCallMeta)
+	case *events.CallOfferNotice:
+		notice := callEvent(current.id, "call.offer", value.BasicCallMeta, "", "", "")
+		notice.Data["source"] = "offer_notice"
+		notice.Data["media"] = value.Media
+		notice.Data["type"] = value.Type
+		m.emit(notice)
+		// Group invitations are reported, but RejectCall only supports direct calls.
+		if value.Type != "group" {
+			m.rejectIncomingCall(current, value.BasicCallMeta)
+		}
+	case *events.UnknownCallEvent:
 		current.mu.RLock()
-		settings := current.settings
+		rejectEnabled := current.settings.RejectCall
 		current.mu.RUnlock()
-		if settings.RejectCall {
-			go func() {
-				caller := value.From
-				if caller.IsEmpty() {
-					caller = value.CallCreator
-				}
-				if err := current.client.RejectCall(context.Background(), caller, value.CallID); err != nil {
-					return
-				}
-				if strings.TrimSpace(settings.MsgRejectCall) != "" {
-					_, _ = m.SendText(context.Background(), current.id, caller.ToNonAD().String(), settings.MsgRejectCall)
-				}
-			}()
+		if rejectEnabled && value.Node != nil {
+			tags := make([]string, 0, len(value.Node.GetChildren()))
+			for _, child := range value.Node.GetChildren() {
+				tags = append(tags, child.Tag)
+			}
+			slog.Warn("unsupported WhatsApp call signal", "instance_id", current.id, "tags", tags)
 		}
 	case *events.CallAccept:
 		m.emit(callEvent(current.id, "call.accept", value.BasicCallMeta, value.RemotePlatform, value.RemoteVersion, ""))
