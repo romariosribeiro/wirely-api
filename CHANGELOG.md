@@ -5,6 +5,11 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.18.5] - 2026-11-02
+
+- Update whatsmeow from `5d4657a5c29e` to `54038813c47f`.
+- Respect WhatsApp's rate-limit backoff during app-state synchronization, avoiding repeated requests while the limit is active.
+
 ## [0.18.4] - 2026-11-01
 
 - Update whatsmeow from `d24d079a3755` to `5d4657a5c29e`, including handshake reconnection, contact deduplication, synchronous app-state acknowledgment, sensitive log redaction, and protocol definitions v1052556849.
@@ -246,7 +251,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.4...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.5...HEAD
+[0.18.5]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.5
 [0.18.4]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.4
 [0.18.3]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.3
 [0.18.2]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.2
