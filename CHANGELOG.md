@@ -5,6 +5,11 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.18.6] - 2026-11-05
+
+- Update whatsmeow from `54038813c47f` to `307a2edf117d`.
+- Improve app-state synchronization handling when the patch MAC is valid but the LTHash does not match, and add diagnostics for synchronization key mismatches.
+
 ## [0.18.5] - 2026-11-02
 
 - Update whatsmeow from `5d4657a5c29e` to `54038813c47f`.
@@ -251,7 +256,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.5...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.6...HEAD
+[0.18.6]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.6
 [0.18.5]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.5
 [0.18.4]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.4
 [0.18.3]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.3
