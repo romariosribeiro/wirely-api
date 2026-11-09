@@ -5,6 +5,12 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.18.7] - 2026-11-09
+
+- Update whatsmeow from `307a2edf117d` to `79dc2a8c33df`.
+- Include upstream fixes for message decryption handling, grouped receipts, contact synchronization, group approval state, and concurrent reconnections.
+- Correct the sender of history messages in bot chats and improve diagnostics for rejected sender keys.
+
 ## [0.18.6] - 2026-11-05
 
 - Update whatsmeow from `54038813c47f` to `307a2edf117d`.
@@ -256,7 +262,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.6...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.7...HEAD
+[0.18.7]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.7
 [0.18.6]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.6
 [0.18.5]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.5
 [0.18.4]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.4
