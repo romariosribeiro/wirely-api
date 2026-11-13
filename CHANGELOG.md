@@ -5,6 +5,11 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.18.8] - 2026-11-13
+
+- Update whatsmeow from `79dc2a8c33df` to `c88388f983b4`.
+- Include upstream context cancellation handling in the socket and verified business names in user information.
+
 ## [0.18.7] - 2026-11-09
 
 - Update whatsmeow from `307a2edf117d` to `79dc2a8c33df`.
@@ -262,7 +267,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.7...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.8...HEAD
+[0.18.8]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.8
 [0.18.7]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.7
 [0.18.6]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.6
 [0.18.5]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.5
