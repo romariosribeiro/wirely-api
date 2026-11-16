@@ -5,6 +5,12 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.18.9] - 2026-11-16
+
+- Update whatsmeow from `c88388f983b4` to `2ecca2c913b9`, align its dependencies, and update WhatsApp protocol definitions to v1054751086.
+- Include upstream fixes to app-state key handling, group cache mutation, stream errors after disconnection, and concurrent unified-session checks.
+- Include Messenger logout and call notification support in the engine; these changes do not specifically address WhatsApp Business call rejection.
+
 ## [0.18.8] - 2026-11-13
 
 - Update whatsmeow from `79dc2a8c33df` to `c88388f983b4`.
@@ -267,7 +273,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.8...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.9...HEAD
+[0.18.9]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.9
 [0.18.8]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.8
 [0.18.7]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.7
 [0.18.6]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.6
