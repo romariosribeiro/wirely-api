@@ -5,6 +5,11 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.18.10] - 2026-11-19
+
+- Update whatsmeow from `2ecca2c913b9` to `19d61352436f`.
+- Include the upstream fix that sends Messenger's Origin and User-Agent headers on media requests.
+
 ## [0.18.9] - 2026-11-16
 
 - Update whatsmeow from `c88388f983b4` to `2ecca2c913b9`, align its dependencies, and update WhatsApp protocol definitions to v1054751086.
@@ -273,7 +278,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.9...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.10...HEAD
+[0.18.10]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.10
 [0.18.9]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.9
 [0.18.8]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.8
 [0.18.7]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.7
