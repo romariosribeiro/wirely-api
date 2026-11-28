@@ -87,7 +87,7 @@ func incomingMessageEvent(instanceID string, message *events.Message) Event {
 		"isGroup":  message.Info.IsGroup,
 		"pushName": message.Info.PushName,
 		"type":     messageType,
-		"text":     messageText(message),
+		"text":     messageText(message.Message),
 	}
 	for _, sender := range []types.JID{message.Info.Sender, message.Info.SenderAlt} {
 		if phone := senderPhoneFromJID(sender); phone != "" {
@@ -102,7 +102,7 @@ func incomingMessageEvent(instanceID string, message *events.Message) Event {
 	if protocol != nil {
 		data["targetId"] = protocol.GetKey().GetID()
 		if edited := protocol.GetEditedMessage(); edited != nil {
-			data["text"] = messageText(&events.Message{Message: edited})
+			data["text"] = messageText(events.UnwrapMessage(edited))
 		}
 	}
 	return newEvent(eventName, instanceID, message.Info.Timestamp, data)
@@ -120,8 +120,7 @@ func senderPhoneFromJID(jid types.JID) string {
 	return jid.User
 }
 
-func messageText(event *events.Message) string {
-	message := event.Message
+func messageText(message *waE2E.Message) string {
 	if message == nil {
 		return ""
 	}

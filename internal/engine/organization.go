@@ -136,7 +136,7 @@ func (m *Manager) GetNewsletterMessages(ctx context.Context, id, newsletterJID s
 	result := make([]NewsletterMessage, 0, len(items))
 	for _, item := range items {
 		result = append(result, NewsletterMessage{ServerID: int64(item.MessageServerID), ID: string(item.MessageID), Type: item.Type,
-			Timestamp: item.Timestamp.UTC().Format("2006-01-02T15:04:05Z07:00"), Text: messageText(&events.Message{Message: item.Message}), Views: item.ViewsCount, Reactions: item.ReactionCounts})
+			Timestamp: item.Timestamp.UTC().Format("2006-01-02T15:04:05Z07:00"), Text: messageText(events.UnwrapMessage(item.Message)), Views: item.ViewsCount, Reactions: item.ReactionCounts})
 	}
 	return result, nil
 }

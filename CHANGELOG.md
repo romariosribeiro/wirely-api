@@ -5,6 +5,11 @@ All notable changes to Wirely API are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.18.11] - 2026-11-27
+
+- Update whatsmeow from `19d61352436f` to `3fe87b230cba`, including improvements to retries, media integrity checks, and handling of wrapped messages.
+- Use the engine's message unwrapping when extracting text from edits and newsletter posts, preserving the existing API and webhook fields.
+
 ## [0.18.10] - 2026-11-19
 
 - Update whatsmeow from `2ecca2c913b9` to `19d61352436f`.
@@ -278,7 +283,8 @@ All notable changes to Wirely API are documented here. The project follows
   kind selected through `type`.
 - Each instance continues to own a single webhook configuration.
 
-[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.10...HEAD
+[Unreleased]: https://github.com/romariosribeiro/wirely-api/compare/v0.18.11...HEAD
+[0.18.11]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.11
 [0.18.10]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.10
 [0.18.9]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.9
 [0.18.8]: https://github.com/romariosribeiro/wirely-api/releases/tag/v0.18.8

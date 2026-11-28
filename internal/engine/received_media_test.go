@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"go.mau.fi/whatsmeow/proto/waE2E"
+	"go.mau.fi/whatsmeow/types"
+	"go.mau.fi/whatsmeow/types/events"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -30,6 +32,25 @@ func TestIncomingMediaMetadata(t *testing.T) {
 	}})
 	if !ok || receivedMediaFileName("MSG-1", document.fileName, document.mimeType) != "invoice.pdf" || document.caption != "Fatura" {
 		t.Fatalf("unexpected document metadata: %#v", document)
+	}
+}
+
+func TestIncomingAudioStickerUsesExistingMediaFields(t *testing.T) {
+	message := (&events.Message{
+		Info: types.MessageInfo{ID: "audio-sticker"},
+		RawMessage: &waE2E.Message{AudioStickerMessage: &waE2E.FutureProofMessage{
+			Message: &waE2E.Message{AudioMessage: &waE2E.AudioMessage{
+				Mimetype:   proto.String("audio/ogg; codecs=opus"),
+				FileLength: proto.Uint64(MaxReceivedMediaBytes + 1),
+				Seconds:    proto.Uint32(3),
+			}},
+		}},
+	}).UnwrapRaw()
+	manager := &Manager{}
+	event := manager.prepareIncomingMessage(&session{id: "instance-1"}, message)
+	media, ok := event.Data["media"].(map[string]any)
+	if !ok || event.Data["type"] != "audio" || media["mimetype"] != "audio/ogg" || media["duration"] != uint32(3) || media["downloadUrl"] != "/api/messages/audio-sticker/media" {
+		t.Fatalf("unexpected audio sticker data: %#v", event.Data)
 	}
 }
 

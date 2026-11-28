@@ -42,10 +42,25 @@ func TestIncomingMessageEvent(t *testing.T) {
 }
 
 func TestMessageTextUsesMediaCaption(t *testing.T) {
-	message := &events.Message{Message: &waE2E.Message{
+	message := &waE2E.Message{
 		ImageMessage: &waE2E.ImageMessage{Caption: proto.String("Photo caption")},
-	}}
+	}
 	if text := messageText(message); text != "Photo caption" {
 		t.Fatalf("unexpected media caption: %q", text)
+	}
+}
+
+func TestEditedMessageTextUnwrapsGroupMention(t *testing.T) {
+	message := &events.Message{Message: &waE2E.Message{
+		ProtocolMessage: &waE2E.ProtocolMessage{
+			Type: waE2E.ProtocolMessage_MESSAGE_EDIT.Enum(),
+			EditedMessage: &waE2E.Message{GroupMentionedMessage: &waE2E.FutureProofMessage{
+				Message: &waE2E.Message{Conversation: proto.String("Updated message")},
+			}},
+		},
+	}}
+	event := incomingMessageEvent("instance-1", message)
+	if event.Event != "message.updated" || event.Data["text"] != "Updated message" {
+		t.Fatalf("unexpected edited message: %#v", event)
 	}
 }
